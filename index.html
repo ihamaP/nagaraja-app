@@ -364,12 +364,15 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-// Deklarasi Data Default
 let db = { athletes: [], dues: {} };
 let currentMonth = localStorage.getItem("nagarajaMonth") || "2026-09";
 
-// Fungsi Save sekarang mengirim data ke Firebase
+// TAMBAHAN: Variabel pengunci agar tidak menimpa database dengan data kosong
+let isDataLoaded = false; 
+
 function saveDB(){
+    // TAMBAHAN: Cegah penyimpanan jika data asli belum turun dari Firebase
+    if (!isDataLoaded) return; 
     database.ref('nagarajaDB').set(db);
 }
 
@@ -381,6 +384,8 @@ database.ref('nagarajaDB').on('value', (snapshot) => {
         if (!db.athletes) db.athletes = [];
         if (!db.dues) db.dues = {};
     }
+    // TAMBAHAN: Buka kunci setelah data berhasil ditarik
+    isDataLoaded = true; 
     renderAll();
 });
 function rupiah(n){
