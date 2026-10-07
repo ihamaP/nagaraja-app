@@ -4,283 +4,367 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nagaraja Basketball - Club Management</title>
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
 <style>
-    :root{
-        --primary:#0f6fae;
-        --primary-dark:#0a5687;
-        --bg:#f4f7fb;
-        --card:#fff;
-        --text:#1f2937;
-        --muted:#6b7280;
-        --border:#dce3ea;
-        --success:#198754;
-        --danger:#dc3545;
-        --warning:#f59e0b;
-        --info:#2563eb;
-    }
-    *{box-sizing:border-box}
-    body{
-        margin:0;
-        font-family:Arial,Helvetica,sans-serif;
-        background:var(--bg);
-        color:var(--text);
-    }
-    button,input,select{font:inherit}
-    .app{display:flex;min-height:100vh}
-    .sidebar{
-        width:240px;background:#fff;border-right:1px solid var(--border);
-        position:fixed;top:0;bottom:0;left:0;padding:20px 14px;z-index:10;
-    }
-    .brand{font-weight:800;font-size:19px;color:var(--primary);padding:8px 10px 24px}
-    .brand small{display:block;color:var(--muted);font-size:11px;margin-top:4px;font-weight:400}
-    .nav button{
-        width:100%;border:0;background:transparent;text-align:left;padding:12px 13px;
-        border-radius:9px;margin:3px 0;cursor:pointer;color:#475569;
-    }
-    .nav button:hover,.nav button.active{background:#eaf4fb;color:var(--primary);font-weight:700}
-    .main{margin-left:240px;width:calc(100% - 240px);padding:25px 30px}
-    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
-    h1{font-size:25px;margin:0 0 5px}
-    .subtitle{color:var(--muted);font-size:13px}
-    .month-select{padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff}
-    .page{display:none}.page.active{display:block}
-    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:18px}
-    .card{
-        background:var(--card);border:1px solid var(--border);border-radius:12px;
-        padding:18px;box-shadow:0 2px 7px rgba(0,0,0,.03)
-    }
-    .card-label{font-size:12px;color:var(--muted);margin-bottom:8px}
-    .card-value{font-size:25px;font-weight:800}
-    .card-note{font-size:11px;color:var(--muted);margin-top:6px}
-    .grid2{display:grid;grid-template-columns:1.25fr .75fr;gap:18px}
-    .section-title{font-size:16px;font-weight:700;margin-bottom:15px}
-    .toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-    .toolbar input,.toolbar select,.form-control{
-        border:1px solid var(--border);border-radius:8px;padding:10px 11px;background:#fff;outline:none;
-    }
-    .toolbar input:focus,.toolbar select:focus,.form-control:focus{border-color:var(--primary)}
-    .btn{
-        border:0;border-radius:8px;padding:10px 13px;cursor:pointer;font-weight:700;
-    }
-    .btn-primary{background:var(--primary);color:white}
-    .btn-primary:hover{background:var(--primary-dark)}
-    .btn-secondary{background:#e9eef3;color:#334155}
-    .btn-success{background:var(--success);color:#fff}
-    .btn-danger{background:var(--danger);color:#fff}
-    .btn-warning{background:var(--warning);color:#fff}
-    .btn-sm{padding:6px 9px;font-size:11px}
-    .table-wrap{overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px}
-    table{width:100%;border-collapse:collapse;min-width:760px}
-    th,td{padding:10px 11px;border-bottom:1px solid #edf0f3;text-align:left;font-size:12px;vertical-align:middle}
-    th{background:#f7f9fb;color:#475569;font-size:11px;text-transform:uppercase}
-    tr:last-child td{border-bottom:0}
-    .badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap}
-    .badge-success{background:#e8f7ee;color:#13753e}
-    .badge-danger{background:#fdebec;color:#b4232f}
-    .badge-warning{background:#fff4db;color:#9a6700}
-    .badge-info{background:#e8f0ff;color:#2454a6}
-    .badge-gray{background:#eef1f4;color:#586474}
-    .progress{height:9px;background:#e8edf2;border-radius:99px;overflow:hidden}
-    .progress > div{height:100%;background:var(--primary);width:0}
-    .breakdown-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #eef1f4;font-size:12px}
-    .breakdown-row:last-child{border-bottom:0}
-    .empty{padding:30px;text-align:center;color:var(--muted)}
-    .file-box{
-        border:2px dashed #b8c7d6;border-radius:12px;padding:30px;text-align:center;
-        background:#fafcff;margin-bottom:18px;
-    }
-    .file-box input{display:none}
-    .modal{
-        display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);
-        z-index:50;align-items:center;justify-content:center;padding:20px;
-    }
-    .modal.show{display:flex}
-    .modal-box{background:#fff;border-radius:13px;width:min(650px,100%);max-height:90vh;overflow:auto;padding:22px}
-    .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-    .modal-head h2{margin:0;font-size:18px}
-    .close{border:0;background:#eef1f4;border-radius:50%;width:32px;height:32px;cursor:pointer}
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
-    .field label{display:block;font-size:11px;font-weight:700;margin-bottom:6px;color:#475569}
-    .field.full{grid-column:1/-1}
-    .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
-    .notice{padding:11px 13px;background:#eef7ff;border:1px solid #cfe7fb;color:#22577a;border-radius:8px;font-size:12px;margin-bottom:15px}
-    @media(max-width:900px){
-        .sidebar{width:70px;padding:12px 8px}.brand{font-size:0;text-align:center}.brand:first-letter{font-size:22px}
-        .brand small,.nav span{display:none}.nav button{text-align:center}.main{margin-left:70px;width:calc(100% - 70px);padding:18px}
-        .cards{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}
-    }
-    @media(max-width:600px){.cards{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.topbar{align-items:flex-start;gap:10px;flex-direction:column}}
+:root{
+    --primary:#0f6fae;
+    --primary-dark:#0a5687;
+    --bg:#f4f7fb;
+    --card:#fff;
+    --text:#1f2937;
+    --muted:#6b7280;
+    --border:#dce3ea;
+    --success:#198754;
+    --danger:#dc3545;
+    --warning:#f59e0b;
+    --info:#2563eb;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}
+.app{display:flex;min-height:100vh}
+.sidebar{width:240px;background:#fff;border-right:1px solid var(--border);position:fixed;top:0;bottom:0;left:0;padding:20px 14px;z-index:10;overflow:auto}
+.brand{font-weight:800;font-size:19px;color:var(--primary);padding:8px 10px 24px}
+.brand small{display:block;color:var(--muted);font-size:11px;margin-top:4px;font-weight:400}
+.nav button{width:100%;border:0;background:transparent;text-align:left;padding:12px 13px;border-radius:9px;margin:3px 0;cursor:pointer;color:#475569}
+.nav button:hover,.nav button.active{background:#eaf4fb;color:var(--primary);font-weight:700}
+.main{margin-left:240px;width:calc(100% - 240px);padding:25px 30px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+h1{font-size:25px;margin:0 0 5px}
+.subtitle{color:var(--muted);font-size:13px}
+.month-select{padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff}
+.page{display:none}.page.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:0 2px 7px rgba(0,0,0,.03)}
+.card-label{font-size:12px;color:var(--muted);margin-bottom:8px}
+.card-value{font-size:25px;font-weight:800}
+.card-note{font-size:11px;color:var(--muted);margin-top:6px}
+.grid2{display:grid;grid-template-columns:1.25fr .75fr;gap:18px}
+.section-title{font-size:16px;font-weight:700;margin-bottom:15px}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar input,.toolbar select,.form-control{
+    border:1px solid var(--border);border-radius:8px;padding:10px 11px;background:#fff;outline:none;
+}
+.toolbar input:focus,.toolbar select:focus,.form-control:focus{border-color:var(--primary)}
+.btn{border:0;border-radius:8px;padding:10px 13px;cursor:pointer;font-weight:700}
+.btn-primary{background:var(--primary);color:white}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-secondary{background:#e9eef3;color:#334155}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-warning{background:var(--warning);color:#fff}
+.btn-sm{padding:6px 9px;font-size:11px}
+.table-wrap{overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{padding:10px 11px;border-bottom:1px solid #edf0f3;text-align:left;font-size:12px;vertical-align:middle}
+th{background:#f7f9fb;color:#475569;font-size:11px;text-transform:uppercase}
+tr:last-child td{border-bottom:0}
+.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap}
+.badge-success{background:#e8f7ee;color:#13753e}
+.badge-danger{background:#fdebec;color:#b4232f}
+.badge-warning{background:#fff4db;color:#9a6700}
+.badge-info{background:#e8f0ff;color:#2454a6}
+.badge-gray{background:#eef1f4;color:#586474}
+.progress{height:9px;background:#e8edf2;border-radius:99px;overflow:hidden}
+.progress > div{height:100%;background:var(--primary);width:0}
+.breakdown-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #eef1f4;font-size:12px}
+.breakdown-row:last-child{border-bottom:0}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+.file-box{border:2px dashed #b8c7d6;border-radius:12px;padding:30px;text-align:center;background:#fafcff;margin-bottom:18px}
+.file-box input{display:none}
+.modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:50;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:13px;width:min(700px,100%);max-height:90vh;overflow:auto;padding:22px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-head h2{margin:0;font-size:18px}
+.close{border:0;background:#eef1f4;border-radius:50%;width:32px;height:32px;cursor:pointer}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.field label{display:block;font-size:11px;font-weight:700;margin-bottom:6px;color:#475569}
+.field small{display:block;font-size:10px;color:var(--muted);margin-top:4px}
+.field.full{grid-column:1/-1}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.notice{padding:11px 13px;background:#eef7ff;border:1px solid #cfe7fb;color:#22577a;border-radius:8px;font-size:12px;margin-bottom:15px}
+.warning-box{padding:11px 13px;background:#fff7e8;border:1px solid #f7d899;color:#8a5a00;border-radius:8px;font-size:12px;margin-bottom:15px}
+.success-box{padding:11px 13px;background:#edf9f1;border:1px solid #c7ead3;color:#176b38;border-radius:8px;font-size:12px;margin-bottom:15px}
+.bpjs-status-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.mini-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px}
+.mini-card .label{font-size:10px;color:var(--muted);margin-bottom:7px}
+.mini-card .value{font-size:22px;font-weight:800}
+.subsection{margin-top:18px}
+@media(max-width:1100px){
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .bpjs-status-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:900px){
+    .sidebar{width:70px;padding:12px 8px}
+    .brand{font-size:0;text-align:center}
+    .brand:first-letter{font-size:22px}
+    .brand small,.nav span{display:none}
+    .nav button{text-align:center}
+    .main{margin-left:70px;width:calc(100% - 70px);padding:18px}
+    .grid2{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+    .cards,.bpjs-status-grid{grid-template-columns:1fr}
+    .form-grid{grid-template-columns:1fr}
+    .topbar{align-items:flex-start;gap:10px;flex-direction:column}
+}
 </style>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 
 <body>
 <div class="app">
-    <aside class="sidebar">
-        <div class="brand">🏀 NAGARAJA<small>Basketball Club Management</small></div>
-        <nav class="nav">
-            <button class="active" data-page="dashboard">📊 <span>Dashboard</span></button>
-            <button data-page="athletes">👥 <span>Data Atlet</span></button>
-            <button data-page="dues">💰 <span>Iuran Bulanan</span></button>
-            <button data-page="import">📥 <span>Import Excel</span></button>
-            <button data-page="followup">📋 <span>Follow Up</span></button>
-            <button data-page="receipts">🧾 <span>Kwitansi</span></button>
-        </nav>
-    </aside>
 
-    <main class="main">
-        <div class="topbar">
-            <div>
-                <h1 id="pageTitle">Dashboard</h1>
-                <div class="subtitle">Sistem administrasi iuran atlet</div>
-            </div>
-            <select id="globalMonth" class="month-select"></select>
+<aside class="sidebar">
+    <div class="brand">🏀 NAGARAJA<small>Basketball Club Management</small></div>
+    <nav class="nav">
+        <button class="active" data-page="dashboard">📊 <span>Dashboard</span></button>
+        <button data-page="athletes">👥 <span>Data Atlet</span></button>
+        <button data-page="dues">💰 <span>Iuran Bulanan</span></button>
+        <button data-page="import">📥 <span>Import Excel</span></button>
+        <button data-page="followup">📋 <span>Follow Up</span></button>
+        <button data-page="receipts">🧾 <span>Kwitansi</span></button>
+        <button data-page="bpjs">🛡️ <span>BPJS TK</span></button>
+    </nav>
+</aside>
+
+<main class="main">
+    <div class="topbar">
+        <div>
+            <h1 id="pageTitle">Dashboard</h1>
+            <div class="subtitle">Sistem administrasi iuran atlet</div>
+        </div>
+        <select id="globalMonth" class="month-select"></select>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="page active">
+        <div class="cards">
+            <div class="card"><div class="card-label">ATLET AKTIF</div><div class="card-value" id="statActive">0</div><div class="card-note">Terdaftar sebagai atlet aktif</div></div>
+            <div class="card"><div class="card-label">SUDAH BAYAR</div><div class="card-value" id="statPaid">0</div><div class="card-note" id="statPaidAmount">Rp0</div></div>
+            <div class="card"><div class="card-label">BELUM BAYAR</div><div class="card-value" id="statUnpaid">0</div><div class="card-note" id="statUnpaidAmount">Rp0</div></div>
+            <div class="card"><div class="card-label">BUKTI BELUM DIKIRIM</div><div class="card-value" id="statProof">0</div><div class="card-note">Perlu follow up</div></div>
         </div>
 
-        <!-- DASHBOARD -->
-        <section id="dashboard" class="page active">
-            <div class="cards">
-                <div class="card"><div class="card-label">ATLET AKTIF</div><div class="card-value" id="statActive">0</div><div class="card-note">Terdaftar sebagai atlet aktif</div></div>
-                <div class="card"><div class="card-label">SUDAH BAYAR</div><div class="card-value" id="statPaid">0</div><div class="card-note" id="statPaidAmount">Rp0</div></div>
-                <div class="card"><div class="card-label">BELUM BAYAR</div><div class="card-value" id="statUnpaid">0</div><div class="card-note" id="statUnpaidAmount">Rp0</div></div>
-                <div class="card"><div class="card-label">BUKTI BELUM DIKIRIM</div><div class="card-value" id="statProof">0</div><div class="card-note">Perlu follow up</div></div>
-            </div>
-
-            <div class="grid2">
-                <div class="card">
-                    <div class="section-title">Ringkasan Iuran</div>
-                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px">
-                        <span>Pembayaran masuk</span><strong id="paymentPercent">0%</strong>
-                    </div>
-                    <div class="progress"><div id="paymentProgress"></div></div>
-                    <div style="display:flex;justify-content:space-between;margin-top:18px;font-size:13px">
-                        <span>Total tagihan</span><strong id="totalBill">Rp0</strong>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;margin-top:9px;font-size:13px">
-                        <span>Sudah masuk</span><strong id="totalPaid">Rp0</strong>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;margin-top:9px;font-size:13px">
-                        <span>Belum masuk</span><strong id="totalUnpaid">Rp0</strong>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="section-title">Breakdown Bulan Ini</div>
-                    <div id="breakdownList"></div>
-                </div>
-            </div>
-
-            <div class="card" style="margin-top:18px">
-                <div class="section-title">⚠️ Perlu Follow Up</div>
-                <div id="dashboardFollowup"></div>
-            </div>
-        </section>
-
-        <!-- ATHLETES -->
-        <section id="athletes" class="page">
+        <div class="grid2">
             <div class="card">
-                <div class="toolbar">
-                    <input id="athleteSearch" placeholder="🔎 Cari nama / NRA / orang tua..." style="min-width:260px">
-                    <select id="athleteStatusFilter">
-                        <option value="all">Semua Status</option>
-                        <option value="Aktif">Aktif</option>
-                        <option value="Tidak Aktif">Tidak Aktif</option>
-                    </select>
-                    <button class="btn btn-primary" onclick="openAthleteModal()">＋ Tambah Atlet</button>
+                <div class="section-title">Ringkasan Iuran</div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px">
+                    <span>Pembayaran masuk</span><strong id="paymentPercent">0%</strong>
                 </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>No</th><th>NRA</th><th>Nama Atlet</th><th>Orang Tua</th><th>No. Telp</th><th>Status</th><th>Action</th></tr></thead>
-                        <tbody id="athleteTable"></tbody>
-                    </table>
-                </div>
+                <div class="progress"><div id="paymentProgress"></div></div>
+                <div style="display:flex;justify-content:space-between;margin-top:18px;font-size:13px"><span>Total tagihan</span><strong id="totalBill">Rp0</strong></div>
+                <div style="display:flex;justify-content:space-between;margin-top:9px;font-size:13px"><span>Sudah masuk</span><strong id="totalPaid">Rp0</strong></div>
+                <div style="display:flex;justify-content:space-between;margin-top:9px;font-size:13px"><span>Belum masuk</span><strong id="totalUnpaid">Rp0</strong></div>
             </div>
-        </section>
 
-        <!-- DUES -->
-        <section id="dues" class="page">
             <div class="card">
-                <div class="toolbar" style="justify-content: space-between;">
-                    <div style="display: flex; gap: 9px; align-items: center; flex-wrap: wrap;">
-                        <input id="duesSearch" placeholder="🔎 Cari atlet..." style="min-width:260px">
-                        <button class="btn btn-primary" onclick="addMissingDues()">＋ Buat Data Bulan Ini</button>
-                    </div>
-                    <!-- TOMBOL BARU UNTUK EXPORT BPJS -->
-                    <div style="display: flex; gap: 9px; align-items: center; flex-wrap: wrap;">
-                        <button class="btn btn-success" onclick="exportBPJS('baru')">📥 Export BPJS Baru</button>
-                        <button class="btn btn-warning" onclick="exportBPJS('perpanjang')" style="color:#000;">📥 Export BPJS Perpanjang</button>
-                    </div>
-                </div>
-                <div class="notice">
-                    Nominal default iuran: <b>Rp350.000</b> jika nominal di Excel kosong tetapi status menunjukkan belum bayar.
-                    &nbsp; | &nbsp; Status Bayar: <b>Sudah Bayar / Belum Bayar</b> &nbsp; | &nbsp;
-                    Breakdown: <b>Sudah Bayar, Belum Bayar, Cuti, Atlet Baru, Akan Join, Pemutihan, Kompensasi</b>
-                </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>No</th><th>NRA</th><th>Nama Atlet</th><th>Iuran</th><th>Status Bayar</th><th>Breakdown</th><th>Bukti Bayar</th><th>Kwitansi</th><th>Action</th></tr></thead>
-                        <tbody id="duesTable"></tbody>
-                    </table>
-                </div>
+                <div class="section-title">Breakdown Bulan Ini</div>
+                <div id="breakdownList"></div>
             </div>
-        </section>
+        </div>
 
-        <!-- IMPORT -->
-        <section id="import" class="page">
-            <div class="card">
-                <div class="section-title">📥 Import Data Atlet & Iuran dari Excel</div>
-                <div class="notice">
-                    Pilih file Excel (.xlsx / .xls). Sistem akan membaca kolom NRA, NAMA, ORANG TUA, NO. TELP ORTU,
-                    serta seluruh kolom iuran Januari–Desember. Atlet yang belum punya NRA tetap dimasukkan.
-                </div>
-                <div class="file-box">
-                    <div style="font-size:38px">📊</div>
-                    <h3>Upload file Excel</h3>
-                    <p style="color:#6b7280;font-size:13px">Data atlet dapat dimasukkan sekaligus, termasuk atlet yang belum memiliki NRA.</p>
-                    <label class="btn btn-primary" for="excelFile">Pilih File Excel</label>
-                    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
-                    <div id="importFileName" style="margin-top:12px;font-size:12px;color:#64748b"></div>
-                </div>
-                <div id="importResult"></div>
-            </div>
-        </section>
+        <div class="card" style="margin-top:18px">
+            <div class="section-title">⚠️ Perlu Follow Up</div>
+            <div id="dashboardFollowup"></div>
+        </div>
+    </section>
 
-        <!-- RECEIPTS -->
-        <section id="receipts" class="page">
-            <div class="card">
-                <div class="section-title">🧾 Kwitansi Pembayaran</div>
-                <div class="notice">Kwitansi dibuat otomatis dari data pembayaran yang berstatus <b>Sudah Bayar</b>. Format PDF satu halaman dibuat ringan, dan tersedia juga JPEG.</div>
-                <div class="toolbar">
-                    <input id="receiptSearch" placeholder="🔎 Cari atlet / nomor kwitansi..." style="min-width:260px">
-                </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>No</th><th>No. Kwitansi</th><th>Atlet</th><th>Periode</th><th>Tanggal Bayar</th><th>Nominal</th><th>Action</th></tr></thead>
-                        <tbody id="receiptTable"></tbody>
-                    </table>
-                </div>
+    <!-- ATHLETES -->
+    <section id="athletes" class="page">
+        <div class="card">
+            <div class="toolbar">
+                <input id="athleteSearch" placeholder="🔎 Cari nama / NRA / orang tua / NIK..." style="min-width:280px">
+                <select id="athleteStatusFilter">
+                    <option value="all">Semua Status</option>
+                    <option value="Aktif">Aktif</option>
+                    <option value="Tidak Aktif">Tidak Aktif</option>
+                </select>
+                <button class="btn btn-primary" onclick="openAthleteModal()">＋ Tambah Atlet</button>
             </div>
-        </section>
 
-        <!-- FOLLOW UP -->
-        <section id="followup" class="page">
-            <div class="card">
-                <div class="section-title">📋 Daftar Follow Up — Belum Bayar</div>
-                <div class="toolbar">
-                    <input id="followupSearch" placeholder="🔎 Cari atlet / orang tua...">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th><th>NRA</th><th>Nama Atlet</th><th>Orang Tua</th><th>No. Telp</th>
+                            <th>NIK</th><th>EXP BPJS TK</th><th>Status</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="athleteTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- DUES -->
+    <section id="dues" class="page">
+        <div class="card">
+            <div class="toolbar">
+                <input id="duesSearch" placeholder="🔎 Cari atlet..." style="min-width:260px">
+                <button class="btn btn-primary" onclick="addMissingDues()">＋ Buat Data Bulan Ini</button>
+            </div>
+            <div class="notice">
+                Nominal default iuran: <b>Rp350.000</b> jika nominal di Excel kosong tetapi status menunjukkan belum bayar.
+                | Status Bayar: <b>Sudah Bayar / Belum Bayar</b> |
+                Breakdown: <b>Sudah Bayar, Belum Bayar, Cuti, Atlet Baru, Akan Join, Pemutihan, Kompensasi</b>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>No</th><th>NRA</th><th>Nama Atlet</th><th>Iuran</th><th>Status Bayar</th><th>Breakdown</th><th>Bukti Bayar</th><th>Kwitansi</th><th>Action</th></tr></thead>
+                    <tbody id="duesTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- IMPORT -->
+    <section id="import" class="page">
+        <div class="card">
+            <div class="section-title">📥 Import Data Atlet & Iuran dari Excel</div>
+            <div class="notice">
+                Pilih file Excel (.xlsx / .xls). Sistem akan membaca kolom NRA, NAMA, ORANG TUA, NO. TELP ORTU,
+                serta seluruh kolom iuran Januari–Desember. Atlet yang belum punya NRA tetap dimasukkan.
+            </div>
+            <div class="file-box">
+                <div style="font-size:38px">📊</div>
+                <h3>Upload file Excel</h3>
+                <p style="color:#6b7280;font-size:13px">Data atlet dapat dimasukkan sekaligus, termasuk atlet yang belum memiliki NRA.</p>
+                <label class="btn btn-primary" for="excelFile">Pilih File Excel</label>
+                <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+                <div id="importFileName" style="margin-top:12px;font-size:12px;color:#64748b"></div>
+            </div>
+            <div id="importResult"></div>
+        </div>
+    </section>
+
+    <!-- RECEIPTS -->
+    <section id="receipts" class="page">
+        <div class="card">
+            <div class="section-title">🧾 Kwitansi Pembayaran</div>
+            <div class="notice">Kwitansi dibuat otomatis dari data pembayaran yang berstatus <b>Sudah Bayar</b>. Format PDF satu halaman dibuat ringan, dan tersedia juga JPEG.</div>
+            <div class="toolbar">
+                <input id="receiptSearch" placeholder="🔎 Cari atlet / nomor kwitansi..." style="min-width:260px">
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>No</th><th>No. Kwitansi</th><th>Atlet</th><th>Periode</th><th>Tanggal Bayar</th><th>Nominal</th><th>Action</th></tr></thead>
+                    <tbody id="receiptTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOLLOW UP -->
+    <section id="followup" class="page">
+        <div class="card">
+            <div class="section-title">📋 Daftar Follow Up — Belum Bayar</div>
+            <div class="toolbar">
+                <input id="followupSearch" placeholder="🔎 Cari atlet / orang tua...">
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>No</th><th>Atlet</th><th>Orang Tua</th><th>No. HP</th><th>Iuran</th><th>Breakdown</th><th>Action</th></tr></thead>
+                    <tbody id="followupTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- BPJS TK -->
+    <section id="bpjs" class="page">
+        <div class="bpjs-status-grid">
+            <div class="mini-card"><div class="label">LUNAS BULAN INI</div><div class="value" id="bpjsPaidCount">0</div></div>
+            <div class="mini-card"><div class="label">PENDAFTARAN BARU</div><div class="value" id="bpjsNewCount">0</div></div>
+            <div class="mini-card"><div class="label">PERPANJANGAN</div><div class="value" id="bpjsRenewCount">0</div></div>
+            <div class="mini-card"><div class="label">NIK BELUM DIISI</div><div class="value" id="bpjsMissingNikCount">0</div></div>
+            <div class="mini-card"><div class="label">AKAN / SUDAH EXPIRED</div><div class="value" id="bpjsExpiryCount">0</div></div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">🛡️ BPJS TK — Pengaturan Export</div>
+            <div class="notice">
+                Peserta yang bisa masuk daftar BPJS adalah atlet aktif yang <b>sudah lunas iuran</b> pada bulan yang dipilih.
+                Klasifikasi otomatis: <b>NIK ada + EXP kosong = Pendaftaran Baru</b>; <b>NIK + EXP ada = Perpanjangan</b>.
+            </div>
+            <div class="form-grid">
+                <div class="field">
+                    <label>Upah BPJS TK</label>
+                    <input type="number" class="form-control" id="bpjsWage" value="1000000">
+                    <small>Default mengikuti contoh template BPJS: Rp1.000.000.</small>
                 </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>No</th><th>Atlet</th><th>Orang Tua</th><th>No. HP</th><th>Iuran</th><th>Breakdown</th><th>Action</th></tr></thead>
-                        <tbody id="followupTable"></tbody>
-                    </table>
+                <div class="field">
+                    <label>Kode Paket</label>
+                    <input class="form-control" id="bpjsPackage" value="T">
+                </div>
+                <div class="field">
+                    <label>Bulan Iuran</label>
+                    <input type="number" class="form-control" id="bpjsMonths" value="3" min="1" step="1">
+                </div>
+                <div class="field">
+                    <label>Jenis Pekerjaan 1</label>
+                    <input class="form-control" id="bpjsJob1" value="P060">
+                </div>
+                <div class="field">
+                    <label>Lokasi Pekerjaan</label>
+                    <input class="form-control" id="bpjsLocation" value="3275">
+                </div>
+                <div class="field">
+                    <label>Jenis Pekerjaan 2</label>
+                    <input class="form-control" id="bpjsJob2" value="">
                 </div>
             </div>
-        </section>
-    </main>
+            <div class="modal-actions" style="justify-content:flex-start">
+                <button class="btn btn-secondary" onclick="saveBpjsConfig()">💾 Simpan Pengaturan</button>
+            </div>
+        </div>
+
+        <div class="card subsection">
+            <div class="section-title">🆕 Pendaftaran BPJS TK Baru</div>
+            <div class="warning-box" id="bpjsNewNotice"></div>
+            <div class="toolbar">
+                <button class="btn btn-success" onclick="exportBpjsNew()">⬇️ Export Pendaftaran Baru</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>No</th><th>Nama</th><th>NIK</th><th>Tgl Lahir</th><th>HP BPJS</th><th>Status Data</th><th>Iuran</th></tr></thead>
+                    <tbody id="bpjsNewTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card subsection">
+            <div class="section-title">🔄 Perpanjangan BPJS TK</div>
+            <div class="success-box" id="bpjsRenewNotice"></div>
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="exportBpjsRenew()">⬇️ Export Perpanjangan</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>No</th><th>Nama</th><th>NIK</th><th>EXP BPJS TK</th><th>Status EXP</th><th>Iuran</th></tr></thead>
+                    <tbody id="bpjsRenewTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card subsection">
+            <div class="section-title">⚠️ Data BPJS Belum Lengkap</div>
+            <div class="notice">Peserta di bawah ini sudah lunas tetapi NIK belum diisi, sehingga belum bisa dimasukkan ke export BPJS.</div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>No</th><th>Nama</th><th>Orang Tua</th><th>NIK</th><th>EXP BPJS TK</th><th>Iuran</th><th>Action</th></tr></thead>
+                    <tbody id="bpjsIncompleteTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</main>
 </div>
 
 <!-- MODAL ATLET -->
@@ -288,21 +372,45 @@
     <div class="modal-box">
         <div class="modal-head"><h2 id="athleteModalTitle">Tambah Atlet</h2><button class="close" onclick="closeModal('athleteModal')">×</button></div>
         <input type="hidden" id="editAthleteIndex">
+
         <div class="form-grid">
             <div class="field"><label>NRA</label><input class="form-control" id="fNra" placeholder="NRA-251198"></div>
             <div class="field"><label>Nama Atlet</label><input class="form-control" id="fName"></div>
-            <!-- INPUT BARU UNTUK NIK DAN TANGGAL LAHIR -->
-            <div class="field"><label>NIK (No. Identitas BPJS)</label><input class="form-control" id="fNik" placeholder="Contoh: 327504261010005"></div>
-            <div class="field"><label>Tanggal Lahir</label><input type="date" class="form-control" id="fDob"></div>
-            
             <div class="field"><label>Orang Tua</label><input class="form-control" id="fParent"></div>
             <div class="field"><label>No. Telp Ortu</label><input class="form-control" id="fPhone"></div>
             <div class="field"><label>Status Atlet</label>
                 <select class="form-control" id="fStatus"><option>Aktif</option><option>Tidak Aktif</option></select>
             </div>
             <div class="field"><label>Tanggal Bergabung</label><input type="date" class="form-control" id="fJoinDate"></div>
+
+            <div class="field full" style="padding-top:8px;border-top:1px solid #edf0f3">
+                <div style="font-size:13px;font-weight:800;color:var(--primary);margin-bottom:8px">🛡️ Data BPJS TK</div>
+            </div>
+
+            <div class="field">
+                <label>NIK</label>
+                <input class="form-control" id="fNik" inputmode="numeric" maxlength="16" placeholder="16 digit NIK">
+                <small>Isi manual. NIK menjadi dasar pemisahan pendaftaran baru/perpanjangan.</small>
+            </div>
+            <div class="field">
+                <label>EXP BPJS TK</label>
+                <input type="date" class="form-control" id="fBpjsExp">
+                <small>Kosongkan bila peserta belum pernah punya BPJS TK.</small>
+            </div>
+            <div class="field">
+                <label>Tanggal Lahir</label>
+                <input type="date" class="form-control" id="fBirthDate">
+                <small>Digunakan untuk template Pendaftaran BPJS TK Baru.</small>
+            </div>
+            <div class="field">
+                <label>HP BPJS TK</label>
+                <input class="form-control" id="fBpjsPhone" inputmode="tel" placeholder="08xxxxxxxxxx">
+                <small>Nomor HP peserta. Tidak otomatis mengambil HP orang tua.</small>
+            </div>
+
             <div class="field full"><label>Catatan</label><input class="form-control" id="fNote"></div>
         </div>
+
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="closeModal('athleteModal')">Batal</button>
             <button class="btn btn-primary" onclick="saveAthlete()">Simpan</button>
@@ -371,43 +479,108 @@ const firebaseConfig = {
     appId: "1:1007087579114:web:04fc2124eb1866c5de4c93"
 };
 
-// Inisialisasi Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 let db = { athletes: [], dues: {} };
 let currentMonth = localStorage.getItem("nagarajaMonth") || "2026-09";
-let isDataLoaded = false; 
+let isDataLoaded = false;
 
 function saveDB(){
-    if (!isDataLoaded) return; 
-    database.ref('nagarajaDB').set(db);
+    if(!isDataLoaded) return;
+    database.ref("nagarajaDB").set(db);
 }
 
-// Sinkronisasi Real-time
-database.ref('nagarajaDB').on('value', (snapshot) => {
+database.ref("nagarajaDB").on("value", (snapshot) => {
     const data = snapshot.val();
-    if (data) {
+    if(data){
         db = data;
-        if (!db.athletes) db.athletes = [];
-        if (!db.dues) db.dues = {};
+        if(!db.athletes) db.athletes = [];
+        if(!db.dues) db.dues = {};
     }
-    isDataLoaded = true; 
+    if(!db.bpjsConfig) db.bpjsConfig = getDefaultBpjsConfig();
+    isDataLoaded = true;
     renderAll();
 });
+
 function rupiah(n){
     return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
 }
+
 function esc(s){
-    return String(s ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+    return String(s ?? "").replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
 }
+
 function monthLabel(key){
     return MONTHS.find(m=>m.key===key)?.label || key;
 }
+
+function monthNumber(key){
+    const n = Number(String(key || "").split("-")[1]);
+    return Number.isFinite(n) ? n : "";
+}
+
+function getDefaultBpjsConfig(){
+    return {
+        wage:1000000,
+        package:"T",
+        months:3,
+        job1:"P060",
+        job2:"",
+        location:"3275"
+    };
+}
+
+function getBpjsConfig(){
+    const c = Object.assign(getDefaultBpjsConfig(), db.bpjsConfig || {});
+    return {
+        wage:Number(c.wage)||1000000,
+        package:String(c.package || "T"),
+        months:Number(c.months)||3,
+        job1:String(c.job1 || "P060"),
+        job2:String(c.job2 || ""),
+        location:String(c.location || "3275")
+    };
+}
+
+function saveBpjsConfig(){
+    db.bpjsConfig = {
+        wage:Number(document.getElementById("bpjsWage").value)||1000000,
+        package:document.getElementById("bpjsPackage").value.trim()||"T",
+        months:Number(document.getElementById("bpjsMonths").value)||3,
+        job1:document.getElementById("bpjsJob1").value.trim()||"P060",
+        job2:document.getElementById("bpjsJob2").value.trim(),
+        location:document.getElementById("bpjsLocation").value.trim()||"3275"
+    };
+    saveDB();
+    renderBPJS();
+    alert("Pengaturan export BPJS TK sudah disimpan.");
+}
+
+function renderBpjsSettings(){
+    const c = getBpjsConfig();
+    const map = {
+        bpjsWage:c.wage,
+        bpjsPackage:c.package,
+        bpjsMonths:c.months,
+        bpjsJob1:c.job1,
+        bpjsJob2:c.job2,
+        bpjsLocation:c.location
+    };
+    Object.entries(map).forEach(([id,val])=>{
+        const el=document.getElementById(id);
+        if(el && document.activeElement!==el) el.value=val;
+    });
+}
+
 function init(){
     const sel=document.getElementById("globalMonth");
     sel.innerHTML=MONTHS.map(m=>`<option value="${m.key}">${m.label}</option>`).join("");
+    if(!MONTHS.some(m=>m.key===currentMonth)) currentMonth=MONTHS[0].key;
     sel.value=currentMonth;
+
     sel.addEventListener("change",()=>{
         currentMonth=sel.value;
         localStorage.setItem("nagarajaMonth",currentMonth);
@@ -431,32 +604,60 @@ function init(){
 
     renderAll();
 }
+
 function showPage(page){
     document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
     document.getElementById(page).classList.add("active");
-    const titles={dashboard:"Dashboard",athletes:"Data Atlet",dues:"Iuran Bulanan",import:"Import Excel",followup:"Follow Up",receipts:"Kwitansi"};
-    document.getElementById("pageTitle").textContent=titles[page];
+
+    const titles={
+        dashboard:"Dashboard",
+        athletes:"Data Atlet",
+        dues:"Iuran Bulanan",
+        import:"Import Excel",
+        followup:"Follow Up",
+        receipts:"Kwitansi",
+        bpjs:"BPJS TK"
+    };
+    document.getElementById("pageTitle").textContent=titles[page] || page;
     renderAll();
 }
+
 function ensureDuesForAthlete(id){
     if(!db.dues[currentMonth]) db.dues[currentMonth]={};
     if(!db.dues[currentMonth][id]){
         db.dues[currentMonth][id]={
-            amount:350000,paid:"Belum Bayar",breakdown:"Belum Bayar",proof:"Belum Dikirim",paidDate:"",method:"Transfer",note:"",receiptNo:""
+            amount:350000,
+            paid:"Belum Bayar",
+            breakdown:"Belum Bayar",
+            proof:"Belum Dikirim",
+            paidDate:"",
+            method:"Transfer",
+            note:"",
+            receiptNo:""
         };
     }
 }
+
 function addMissingDues(){
     db.athletes.filter(a=>a.status==="Aktif").forEach(a=>ensureDuesForAthlete(a.id));
-    saveDB();renderAll();
+    saveDB();
+    renderAll();
     alert("Data iuran bulan "+monthLabel(currentMonth)+" sudah dibuat untuk atlet aktif.");
 }
+
 function renderAll(){
-    renderDashboard();renderAthletes();renderDues();renderFollowup();renderReceipts();
+    renderDashboard();
+    renderAthletes();
+    renderDues();
+    renderFollowup();
+    renderReceipts();
+    renderBPJS();
 }
+
 function getActiveAthletes(){
     return db.athletes.filter(a=>a.status==="Aktif");
 }
+
 function renderDashboard(){
     const active=getActiveAthletes();
     let rows=[];
@@ -464,6 +665,7 @@ function renderDashboard(){
         ensureDuesForAthlete(a.id);
         rows.push({a,d:db.dues[currentMonth][a.id]});
     });
+
     const paid=rows.filter(x=>x.d.paid==="Sudah Bayar");
     const unpaid=rows.filter(x=>x.d.paid==="Belum Bayar" && x.d.breakdown==="Belum Bayar");
     const proof=rows.filter(x=>x.d.proof==="Belum Dikirim");
@@ -497,19 +699,140 @@ function renderDashboard(){
         <td><button class="btn btn-success btn-sm" onclick="whatsappFollowup('${esc(x.a.id)}')">WhatsApp</button></td></tr>`).join("")}
         </tbody></table></div>`
         : `<div class="empty">Tidak ada tunggakan normal pada bulan ini 🎉</div>`;
+
     saveDB();
 }
+
+function bpjsExpiryStatus(exp){
+    if(!exp) return {label:"Belum ada EXP", cls:"badge-gray"};
+    const d = new Date(exp+"T00:00:00");
+    if(Number.isNaN(d.getTime())) return {label:"Format EXP salah", cls:"badge-danger"};
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const diff = Math.ceil((d-today)/(1000*60*60*24));
+    if(diff < 0) return {label:"Expired", cls:"badge-danger"};
+    if(diff <= 30) return {label:`Akan expired (${diff} hari)`, cls:"badge-warning"};
+    return {label:"Aktif", cls:"badge-success"};
+}
+
+function bpjsClassification(a){
+    const nik=String(a.bpjsNik||"").replace(/\D/g,"");
+    const exp=String(a.bpjsExp||"").trim();
+    if(!nik) return "incomplete";
+    if(!exp) return "new";
+    return "renew";
+}
+
+function getPaidBpjsAthletes(){
+    return getActiveAthletes().filter(a=>{
+        ensureDuesForAthlete(a.id);
+        return db.dues[currentMonth][a.id].paid==="Sudah Bayar";
+    });
+}
+
+function formatBpjsPhone(v){
+    return String(v||"").trim();
+}
+
+function formatExcelDateDDMMYYYY(v){
+    if(!v) return "";
+    const p=String(v).split("-");
+    if(p.length===3 && p[0].length===4) return `${p[2]}-${p[1]}-${p[0]}`;
+    return String(v);
+}
+
+function renderBPJS(){
+    const paid = getPaidBpjsAthletes();
+    const newList = paid.filter(a=>bpjsClassification(a)==="new");
+    const renewList = paid.filter(a=>bpjsClassification(a)==="renew");
+    const incomplete = paid.filter(a=>bpjsClassification(a)==="incomplete");
+    const expiryList = renewList.filter(a=>{
+        const s=bpjsExpiryStatus(a.bpjsExp).label;
+        return s==="Expired" || s.startsWith("Akan expired");
+    });
+
+    document.getElementById("bpjsPaidCount").textContent=paid.length;
+    document.getElementById("bpjsNewCount").textContent=newList.length;
+    document.getElementById("bpjsRenewCount").textContent=renewList.length;
+    document.getElementById("bpjsMissingNikCount").textContent=incomplete.length;
+    document.getElementById("bpjsExpiryCount").textContent=expiryList.length;
+
+    renderBpjsSettings();
+
+    document.getElementById("bpjsNewNotice").innerHTML = newList.length
+        ? `Ada <b>${newList.length}</b> peserta siap dimasukkan ke Pendaftaran Baru. Pastikan <b>Tanggal Lahir</b> dan <b>HP BPJS TK</b> sudah diisi bila diperlukan oleh BPJS.`
+        : `Belum ada peserta yang masuk kategori Pendaftaran Baru untuk ${esc(monthLabel(currentMonth))}.`;
+
+    document.getElementById("bpjsRenewNotice").innerHTML = renewList.length
+        ? `Ada <b>${renewList.length}</b> peserta siap dimasukkan ke Perpanjangan untuk ${esc(monthLabel(currentMonth))}.`
+        : `Belum ada peserta yang masuk kategori Perpanjangan untuk ${esc(monthLabel(currentMonth))}.`;
+
+    const newTb=document.getElementById("bpjsNewTable");
+    newTb.innerHTML=newList.length
+        ? newList.map((a,i)=>{
+            const d=db.dues[currentMonth][a.id];
+            const complete=a.bpjsDob && a.bpjsPhone;
+            return `<tr>
+                <td>${i+1}</td>
+                <td><b>${esc(a.name)}</b><br><small>${esc(a.nra||"")}</small></td>
+                <td>${esc(a.bpjsNik)}</td>
+                <td>${esc(formatDate(a.bpjsDob)||"-")}</td>
+                <td>${esc(formatBpjsPhone(a.bpjsPhone)||"-")}</td>
+                <td><span class="badge ${complete?"badge-success":"badge-warning"}">${complete?"Lengkap":"Perlu dilengkapi"}</span></td>
+                <td>${rupiah(d.amount)}</td>
+            </tr>`;
+        }).join("")
+        : `<tr><td colspan="7" class="empty">Tidak ada peserta pendaftaran baru.</td></tr>`;
+
+    const renewTb=document.getElementById("bpjsRenewTable");
+    renewTb.innerHTML=renewList.length
+        ? renewList.map((a,i)=>{
+            const d=db.dues[currentMonth][a.id];
+            const st=bpjsExpiryStatus(a.bpjsExp);
+            return `<tr>
+                <td>${i+1}</td>
+                <td><b>${esc(a.name)}</b><br><small>${esc(a.nra||"")}</small></td>
+                <td>${esc(a.bpjsNik)}</td>
+                <td>${esc(formatDate(a.bpjsExp))}</td>
+                <td><span class="badge ${st.cls}">${esc(st.label)}</span></td>
+                <td>${rupiah(d.amount)}</td>
+            </tr>`;
+        }).join("")
+        : `<tr><td colspan="6" class="empty">Tidak ada peserta perpanjangan.</td></tr>`;
+
+    const incTb=document.getElementById("bpjsIncompleteTable");
+    incTb.innerHTML=incomplete.length
+        ? incomplete.map((a,i)=>{
+            const d=db.dues[currentMonth][a.id];
+            return `<tr>
+                <td>${i+1}</td><td><b>${esc(a.name)}</b></td><td>${esc(a.parent)}</td>
+                <td><span class="badge badge-warning">Belum diisi</span></td>
+                <td>${esc(formatDate(a.bpjsExp)||"-")}</td><td>${rupiah(d.amount)}</td>
+                <td><button class="btn btn-secondary btn-sm" onclick="editAthlete('${esc(a.id)}')">Isi NIK</button></td>
+            </tr>`;
+        }).join("")
+        : `<tr><td colspan="7" class="empty">Semua peserta lunas bulan ini sudah memiliki NIK.</td></tr>`;
+}
+
 function renderAthletes(){
     const q=(document.getElementById("athleteSearch")?.value||"").toLowerCase();
     const filter=document.getElementById("athleteStatusFilter")?.value||"all";
+
     const data=db.athletes.filter(a=>{
-        const match=!q || [a.nra,a.name,a.parent,a.phone].join(" ").toLowerCase().includes(q);
+        const match=!q || [a.nra,a.name,a.parent,a.phone,a.bpjsNik].join(" ").toLowerCase().includes(q);
         return match&&(filter==="all"||a.status===filter);
     });
-    document.getElementById("athleteTable").innerHTML=data.length?data.map((a,i)=>`
-        <tr>
-            <td>${i+1}</td><td>${a.nra ? esc(a.nra) : '<span class="badge badge-warning">Belum ada NRA</span>'}</td><td><b>${esc(a.name)}</b></td>
-            <td>${esc(a.parent)}</td><td>${esc(a.phone)}</td>
+
+    document.getElementById("athleteTable").innerHTML=data.length?data.map((a,i)=>{
+        const expSt=a.bpjsExp?bpjsExpiryStatus(a.bpjsExp):null;
+        return `<tr>
+            <td>${i+1}</td>
+            <td>${a.nra ? esc(a.nra) : '<span class="badge badge-warning">Belum ada NRA</span>'}</td>
+            <td><b>${esc(a.name)}</b></td>
+            <td>${esc(a.parent)}</td>
+            <td>${esc(a.phone)}</td>
+            <td>${a.bpjsNik ? esc(a.bpjsNik) : '<span class="badge badge-warning">Belum diisi</span>'}</td>
+            <td>${a.bpjsExp ? `<span class="badge ${expSt.cls}">${esc(formatDate(a.bpjsExp))}</span>` : '<span class="badge badge-gray">Belum diisi</span>'}</td>
             <td><span class="badge ${a.status==="Aktif"?"badge-success":"badge-gray"}">${esc(a.status)}</span></td>
             <td>
                 <button class="btn btn-secondary btn-sm" onclick="editAthlete('${esc(a.id)}')">Edit</button>
@@ -517,26 +840,33 @@ function renderAthletes(){
                     ? `<button class="btn btn-danger btn-sm" onclick="deactivateAthlete('${esc(a.id)}')">Atlet Keluar</button>`
                     : `<button class="btn btn-success btn-sm" onclick="activateAthlete('${esc(a.id)}')">Aktifkan</button>`}
             </td>
-        </tr>`).join(""):`<tr><td colspan="7" class="empty">Belum ada data atlet.</td></tr>`;
+        </tr>`;
+    }).join(""):`<tr><td colspan="9" class="empty">Belum ada data atlet.</td></tr>`;
 }
+
 function renderDues(){
     const q=(document.getElementById("duesSearch")?.value||"").toLowerCase();
     const active=getActiveAthletes();
     active.forEach(a=>ensureDuesForAthlete(a.id));
+
     const data=active.filter(a=>[a.nra,a.name,a.parent].join(" ").toLowerCase().includes(q));
     document.getElementById("duesTable").innerHTML=data.length?data.map((a,i)=>{
         const d=db.dues[currentMonth][a.id];
         return `<tr>
-            <td>${i+1}</td><td>${a.nra ? esc(a.nra) : '<span class="badge badge-warning">Belum ada NRA</span>'}</td><td><b>${esc(a.name)}</b></td><td>${rupiah(d.amount)}</td>
+            <td>${i+1}</td>
+            <td>${a.nra ? esc(a.nra) : '<span class="badge badge-warning">Belum ada NRA</span>'}</td>
+            <td><b>${esc(a.name)}</b></td>
+            <td>${rupiah(d.amount)}</td>
             <td><span class="badge ${d.paid==="Sudah Bayar"?"badge-success":"badge-danger"}">${esc(d.paid)}</span></td>
             <td><span class="badge ${d.breakdown==="Belum Bayar"?"badge-danger":"badge-info"}">${esc(d.breakdown)}</span></td>
             <td><span class="badge ${d.proof==="Sudah Dikirim"?"badge-success":"badge-warning"}">${esc(d.proof)}</span></td>
             <td>${d.paid==="Sudah Bayar" ? `<button class="btn btn-primary btn-sm" onclick="generateReceipt('${esc(a.id)}')">🧾 ${d.receiptNo?"Buat Ulang":"Kwitansi"}</button>` : `<span class="badge badge-gray">Belum bayar</span>`}</td>
             <td><button class="btn btn-secondary btn-sm" onclick="editDues('${esc(a.id)}')">Edit</button></td>
         </tr>`;
-    }).join(""):`<tr><td colspan="8" class="empty">Belum ada data.</td></tr>`;
+    }).join(""):`<tr><td colspan="9" class="empty">Belum ada data.</td></tr>`;
     saveDB();
 }
+
 function renderFollowup(){
     const q=(document.getElementById("followupSearch")?.value||"").toLowerCase();
     const data=getActiveAthletes().filter(a=>{
@@ -545,72 +875,98 @@ function renderFollowup(){
         return d.paid==="Belum Bayar" && d.breakdown==="Belum Bayar" &&
             [a.nra,a.name,a.parent,a.phone].join(" ").toLowerCase().includes(q);
     });
+
     document.getElementById("followupTable").innerHTML=data.length?data.map((a,i)=>{
         const d=db.dues[currentMonth][a.id];
-        return `<tr><td>${i+1}</td><td><b>${esc(a.name)}</b><br><small>${esc(a.nra)}</small></td>
-        <td>${esc(a.parent)}</td><td>${esc(a.phone)}</td><td>${rupiah(d.amount)}</td>
-        <td><span class="badge badge-danger">${esc(d.breakdown)}</span></td>
-        <td><button class="btn btn-success btn-sm" onclick="whatsappFollowup('${esc(a.id)}')">WhatsApp</button></td></tr>`;
+        return `<tr>
+            <td>${i+1}</td>
+            <td><b>${esc(a.name)}</b><br><small>${esc(a.nra)}</small></td>
+            <td>${esc(a.parent)}</td><td>${esc(a.phone)}</td><td>${rupiah(d.amount)}</td>
+            <td><span class="badge badge-danger">${esc(d.breakdown)}</span></td>
+            <td><button class="btn btn-success btn-sm" onclick="whatsappFollowup('${esc(a.id)}')">WhatsApp</button></td>
+        </tr>`;
     }).join(""):`<tr><td colspan="7" class="empty">Tidak ada atlet yang perlu di-follow up.</td></tr>`;
 }
+
 function openAthleteModal(id=null){
     document.getElementById("athleteModal").classList.add("show");
     document.getElementById("athleteModalTitle").textContent=id?"Edit Atlet":"Tambah Atlet";
     document.getElementById("editAthleteIndex").value=id||"";
+
     const a=id?db.athletes.find(x=>x.id===id):{};
     document.getElementById("fNra").value=a.nra||"";
     document.getElementById("fName").value=a.name||"";
-    
-    // BACA NIK & DOB YANG BARU DITAMBAHKAN
-    document.getElementById("fNik").value=a.nik||"";
-    document.getElementById("fDob").value=a.dob||"";
-    
     document.getElementById("fParent").value=a.parent||"";
     document.getElementById("fPhone").value=a.phone||"";
     document.getElementById("fStatus").value=a.status||"Aktif";
     document.getElementById("fJoinDate").value=a.joinDate||"";
+    document.getElementById("fNik").value=a.bpjsNik||"";
+    document.getElementById("fBpjsExp").value=a.bpjsExp||"";
+    document.getElementById("fBirthDate").value=a.bpjsDob||"";
+    document.getElementById("fBpjsPhone").value=a.bpjsPhone||"";
     document.getElementById("fNote").value=a.note||"";
 }
+
 function saveAthlete(){
     const id=document.getElementById("editAthleteIndex").value;
     const obj={
         id:id||("A"+Date.now()),
         nra:document.getElementById("fNra").value.trim(),
         name:document.getElementById("fName").value.trim(),
-        
-        // SIMPAN NIK & DOB
-        nik:document.getElementById("fNik").value.trim(),
-        dob:document.getElementById("fDob").value,
-        
         parent:document.getElementById("fParent").value.trim(),
         phone:document.getElementById("fPhone").value.trim(),
         status:document.getElementById("fStatus").value,
         joinDate:document.getElementById("fJoinDate").value,
+        bpjsNik:document.getElementById("fNik").value.replace(/\D/g,"").slice(0,16),
+        bpjsExp:document.getElementById("fBpjsExp").value,
+        bpjsDob:document.getElementById("fBirthDate").value,
+        bpjsPhone:document.getElementById("fBpjsPhone").value.trim(),
         note:document.getElementById("fNote").value.trim()
     };
+
     if(!obj.name){alert("Nama atlet wajib diisi.");return;}
+    if(obj.bpjsNik && obj.bpjsNik.length!==16){
+        alert("NIK harus 16 digit.");
+        return;
+    }
+
     if(id){
         const idx=db.athletes.findIndex(a=>a.id===id);
-        db.athletes[idx]=obj;
-    }else db.athletes.push(obj);
-    saveDB();closeModal("athleteModal");renderAll();
+        if(idx<0){alert("Data atlet tidak ditemukan.");return;}
+        db.athletes[idx]=Object.assign({},db.athletes[idx],obj);
+    }else{
+        db.athletes.push(obj);
+    }
+
+    saveDB();
+    closeModal("athleteModal");
+    renderAll();
 }
+
 function editAthlete(id){openAthleteModal(id)}
+
 function deactivateAthlete(id){
     if(confirm("Yakin atlet ini ditandai sebagai keluar? Data iuran dan histori tetap disimpan.")){
-        const a=db.athletes.find(x=>x.id===id);if(a)a.status="Tidak Aktif";
-        saveDB();renderAll();
+        const a=db.athletes.find(x=>x.id===id);
+        if(a)a.status="Tidak Aktif";
+        saveDB();
+        renderAll();
     }
 }
+
 function activateAthlete(id){
-    const a=db.athletes.find(x=>x.id===id);if(a)a.status="Aktif";
-    saveDB();renderAll();
+    const a=db.athletes.find(x=>x.id===id);
+    if(a)a.status="Aktif";
+    saveDB();
+    renderAll();
 }
+
 function editDues(id){
     ensureDuesForAthlete(id);
     const d=db.dues[currentMonth][id], a=db.athletes.find(x=>x.id===id);
+
     document.getElementById("editDuesKey").value=id;
-    document.getElementById("dAthlete").value=`${a.name} (${a.nra})`;
+    document.getElementById("dAthlete").value=`${a.name} (${a.nra||"tanpa NRA"})`;
     document.getElementById("dAmount").value=d.amount;
     document.getElementById("dPaid").value=d.paid;
     document.getElementById("dBreakdown").value=d.breakdown;
@@ -620,9 +976,11 @@ function editDues(id){
     document.getElementById("dNote").value=d.note||"";
     document.getElementById("duesModal").classList.add("show");
 }
+
 function saveDues(){
     const id=document.getElementById("editDuesKey").value;
     ensureDuesForAthlete(id);
+
     db.dues[currentMonth][id]={
         amount:Number(document.getElementById("dAmount").value)||0,
         paid:document.getElementById("dPaid").value,
@@ -633,23 +991,35 @@ function saveDues(){
         note:document.getElementById("dNote").value.trim(),
         receiptNo:(db.dues[currentMonth][id]||{}).receiptNo||""
     };
+
     if(db.dues[currentMonth][id].paid==="Sudah Bayar" && !db.dues[currentMonth][id].paidDate){
         db.dues[currentMonth][id].paidDate=new Date().toISOString().slice(0,10);
     }
-    saveDB();closeModal("duesModal");renderAll();
+
+    saveDB();
+    closeModal("duesModal");
+    renderAll();
 }
-function closeModal(id){document.getElementById(id).classList.remove("show")}
+
+function closeModal(id){
+    document.getElementById(id).classList.remove("show");
+}
+
 function whatsappFollowup(id){
-    const a=db.athletes.find(x=>x.id===id);if(!a)return;
+    const a=db.athletes.find(x=>x.id===id);
+    if(!a)return;
+
     ensureDuesForAthlete(id);
     const d=db.dues[currentMonth][id];
     let phone=(a.phone||"").replace(/\D/g,"");
+
     if(phone.startsWith("0"))phone="62"+phone.substring(1);
+
     const msg=`Halo Kak/Bunda, izin mengingatkan untuk iuran bulanan atlet ${a.name} periode ${monthLabel(currentMonth)} sebesar ${rupiah(d.amount)}. Apabila sudah melakukan pembayaran, mohon mengirimkan bukti pembayaran. Terima kasih 🙏`;
+
     if(!phone){alert("Nomor HP orang tua belum tersedia.");return;}
     window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(msg),"_blank");
 }
-
 
 /* KWITANSI OTOMATIS */
 function nextReceiptNo(){
@@ -660,6 +1030,7 @@ function nextReceiptNo(){
     }));
     return "NGR-"+String(max+1).padStart(4,"0");
 }
+
 function terbilang(n){
     n=Math.floor(Math.abs(Number(n)||0));
     const a=["","satu","dua","tiga","empat","lima","enam","tujuh","delapan","sembilan","sepuluh","sebelas"];
@@ -677,39 +1048,52 @@ function terbilang(n){
     }
     return (t(n)||"nol").replace(/\s+/g," ").trim()+" rupiah";
 }
+
 function fmtDate(v){
     if(!v)return "";
     const p=String(v).split("-");
     if(p.length===3)return `${p[2]}-${p[1]}-${p[0]}`;
     return v;
 }
+
 function ensureReceiptNo(id){
     ensureDuesForAthlete(id);
     const d=db.dues[currentMonth][id];
+
     if(!d.receiptNo)d.receiptNo=nextReceiptNo();
     if(!d.paidDate)d.paidDate=new Date().toISOString().slice(0,10);
     if(!d.method)d.method="Transfer";
+
     saveDB();
     return d;
 }
+
 function generateReceipt(id){
-    const a=db.athletes.find(x=>x.id===id); if(!a)return;
+    const a=db.athletes.find(x=>x.id===id);
+    if(!a)return;
+
     const d=ensureReceiptNo(id);
     if(d.paid!=="Sudah Bayar"){alert("Kwitansi hanya dapat dibuat untuk pembayaran yang berstatus Sudah Bayar.");return;}
+
     const choice=confirm("Klik OK untuk PDF. Klik Cancel untuk JPEG.");
-    if(choice) downloadReceiptPDF(a,d);
+    if(choice)downloadReceiptPDF(a,d);
     else downloadReceiptJPEG(a,d);
     renderAll();
 }
+
 function receiptCanvas(a,d){
-    const c=document.createElement("canvas"); c.width=1400;c.height=900;
+    const c=document.createElement("canvas");
+    c.width=1400;c.height=900;
     const x=c.getContext("2d");
+
     x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);
     x.strokeStyle="#222";x.lineWidth=3;x.strokeRect(35,35,c.width-70,c.height-70);
+
     x.fillStyle="#0f6fae";x.font="bold 42px Arial";x.textAlign="center";
     x.fillText("NAGARAJA BASKETBALL",700,105);
     x.fillStyle="#222";x.font="bold 30px Arial";x.fillText("KWITANSI PEMBAYARAN",700,155);
     x.font="20px Arial";x.fillText("MONTHLY FEE CLUB NAGARAJA BASKETBALL",700,190);
+
     x.textAlign="left";x.font="24px Arial";
     const lines=[
         ["No. Kwitansi",d.receiptNo],
@@ -719,141 +1103,219 @@ function receiptCanvas(a,d){
         ["Periode / Bulan",monthLabel(currentMonth)],
         ["Metode Pembayaran",d.method||"Transfer"]
     ];
+
     let y=270;
-    lines.forEach(([lab,val])=>{x.font="bold 22px Arial";x.fillText(lab,100,y);x.font="22px Arial";x.fillText(":  "+String(val||"-"),390,y);y+=58;});
+    lines.forEach(([lab,val])=>{
+        x.font="bold 22px Arial";x.fillText(lab,100,y);
+        x.font="22px Arial";x.fillText(":  "+String(val||"-"),390,y);
+        y+=58;
+    });
+
     x.strokeStyle="#888";x.lineWidth=1;x.strokeRect(95,625,1210,105);
     x.font="bold 20px Arial";x.fillText("TELAH DITERIMA PEMBAYARAN SEBESAR",125,660);
     x.font="bold 34px Arial";x.fillText(rupiah(d.amount),125,705);
     x.font="italic 19px Arial";x.fillText("Terbilang: "+terbilang(d.amount),100,775);
+
     if(d.note){x.font="18px Arial";x.fillText("Keterangan: "+d.note,100,820);}
     x.textAlign="right";x.font="18px Arial";x.fillText("Terima kasih atas pembayaran Anda.",1300,850);
+
     return c;
 }
+
 function downloadReceiptJPEG(a,d){
     const c=receiptCanvas(a,d);
     const link=document.createElement("a");
     link.download=`Kwitansi_${d.receiptNo}_${a.name.replace(/[^a-z0-9]+/gi,"_")}.jpg`;
-    link.href=c.toDataURL("image/jpeg",0.82);link.click();
+    link.href=c.toDataURL("image/jpeg",0.82);
+    link.click();
 }
+
 function downloadReceiptPDF(a,d){
-    if(!window.jspdf){alert("Library PDF belum termuat. Pastikan komputer terhubung internet saat membuka aplikasi pertama kali.");return;}
+    if(!window.jspdf){
+        alert("Library PDF belum termuat. Pastikan komputer terhubung internet saat membuka aplikasi pertama kali.");
+        return;
+    }
+
     const {jsPDF}=window.jspdf;
     const c=receiptCanvas(a,d);
     const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:"a5"});
     const img=c.toDataURL("image/jpeg",0.82);
+
     pdf.addImage(img,"JPEG",8,8,132,89);
     pdf.save(`Kwitansi_${d.receiptNo}_${a.name.replace(/[^a-z0-9]+/gi,"_")}.pdf`);
 }
+
 function renderReceipts(){
     const q=(document.getElementById("receiptSearch")?.value||"").toLowerCase();
     const rows=[];
-    Object.entries(db.dues||{}).forEach(([mk,month])=>Object.entries(month||{}).forEach(([id,d])=>{
-        if(d.paid!=="Sudah Bayar")return;
-        const a=db.athletes.find(x=>x.id===id);if(!a)return;
-        const hay=[a.name,a.nra,d.receiptNo,monthLabel(mk)].join(" ").toLowerCase();
-        if(!q||hay.includes(q))rows.push({mk,a,d});
-    }));
+
+    Object.entries(db.dues||{}).forEach(([mk,month])=>{
+        Object.entries(month||{}).forEach(([id,d])=>{
+            if(d.paid!=="Sudah Bayar")return;
+
+            const a=db.athletes.find(x=>x.id===id);
+            if(!a)return;
+
+            const hay=[a.name,a.nra,d.receiptNo,monthLabel(mk)].join(" ").toLowerCase();
+            if(!q||hay.includes(q))rows.push({mk,a,d});
+        });
+    });
+
     rows.sort((x,y)=>String(y.d.paidDate||"").localeCompare(String(x.d.paidDate||"")));
+
     const tb=document.getElementById("receiptTable");
     if(!tb)return;
-    tb.innerHTML=rows.length?rows.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.d.receiptNo||"Belum dibuat")}</b></td><td>${esc(x.a.name)}</td><td>${esc(monthLabel(x.mk))}</td><td>${esc(fmtDate(x.d.paidDate)||"-")}</td><td>${rupiah(x.d.amount)}</td><td><button class="btn btn-primary btn-sm" onclick="currentMonth='${x.mk}';document.getElementById('globalMonth').value=currentMonth;localStorage.setItem('nagarajaMonth',currentMonth);generateReceipt('${esc(x.a.id)}')">🧾 Generate</button></td></tr>`).join(""):`<tr><td colspan="7" class="empty">Belum ada pembayaran yang berstatus Sudah Bayar.</td></tr>`;
+
+    tb.innerHTML=rows.length?rows.map((x,i)=>`<tr>
+        <td>${i+1}</td>
+        <td><b>${esc(x.d.receiptNo||"Belum dibuat")}</b></td>
+        <td>${esc(x.a.name)}</td>
+        <td>${esc(monthLabel(x.mk))}</td>
+        <td>${esc(fmtDate(x.d.paidDate)||"-")}</td>
+        <td>${rupiah(x.d.amount)}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="setReceiptMonthAndGenerate('${esc(x.mk)}','${esc(x.a.id)}')">🧾 Generate</button></td>
+    </tr>`).join(""):`<tr><td colspan="7" class="empty">Belum ada pembayaran yang berstatus Sudah Bayar.</td></tr>`;
+}
+
+function setReceiptMonthAndGenerate(month,id){
+    currentMonth=month;
+    document.getElementById("globalMonth").value=currentMonth;
+    localStorage.setItem("nagarajaMonth",currentMonth);
+    generateReceipt(id);
 }
 
 /* IMPORT EXCEL */
 const MONTH_MAP = [
-    {key:"2026-01", aliases:["jan","januari"]}, {key:"2026-02", aliases:["feb","februari"]},
-    {key:"2026-03", aliases:["mar","maret"]}, {key:"2026-04", aliases:["apr","april"]},
-    {key:"2026-05", aliases:["may","mei","may"]}, {key:"2026-06", aliases:["jun","juni"]},
-    {key:"2026-07", aliases:["jul","juli"]}, {key:"2026-08", aliases:["aug","agu","agustus"]},
-    {key:"2026-09", aliases:["sep","sept","september"]}, {key:"2026-10", aliases:["oct","okt","october","oktober"]},
-    {key:"2026-11", aliases:["nov","november"]}, {key:"2026-12", aliases:["dec","des","december","desember"]}
+    {key:"2026-01", aliases:["jan","januari"]},
+    {key:"2026-02", aliases:["feb","februari"]},
+    {key:"2026-03", aliases:["mar","maret"]},
+    {key:"2026-04", aliases:["apr","april"]},
+    {key:"2026-05", aliases:["may","mei"]},
+    {key:"2026-06", aliases:["jun","juni"]},
+    {key:"2026-07", aliases:["jul","juli"]},
+    {key:"2026-08", aliases:["aug","agu","agustus"]},
+    {key:"2026-09", aliases:["sep","sept","september"]},
+    {key:"2026-10", aliases:["oct","okt","october","oktober"]},
+    {key:"2026-11", aliases:["nov","november"]},
+    {key:"2026-12", aliases:["dec","des","december","desember"]}
 ];
 
-function normalize(v){ return String(v ?? "").trim().toLowerCase().replace(/[._\-\s]+/g,""); }
+function normalize(v){
+    return String(v ?? "").trim().toLowerCase().replace(/[._\-\s]+/g,"");
+}
+
 function cleanNra(v){
     const s=String(v ?? "").trim();
-    const stripped=s.toLowerCase().replace(/[\s\-_:]/g,"");
-    if(!s || stripped==="nra") return "";
+    const stripped=s.toLowerCase().replace(/[\s\-\_:]/g,"");
+    if(!s || stripped==="nra")return "";
     return s;
 }
+
 function normalizeStatus(v){
     const s=String(v ?? "").trim().toLowerCase();
-    if(s.includes("sudah")) return "Sudah Bayar";
-    if(s.includes("belom") || s.includes("belum")) return "Belum Bayar";
+    if(s.includes("sudah"))return "Sudah Bayar";
+    if(s.includes("belom") || s.includes("belum"))return "Belum Bayar";
     return "";
 }
+
 function normalizeBreakdown(v){
     const s=String(v ?? "").trim().toLowerCase();
-    if(!s) return "";
+    if(!s)return "";
+
     const map=[
         ["sudah","Sudah Bayar"],["belom","Belum Bayar"],["belum","Belum Bayar"],
         ["cuti","Cuti"],["atletbaru","Atlet Baru"],["akanjoin","Akan Join"],
         ["pemutihan","Pemutihan"],["kompensasi","Kompensasi"]
     ];
-    for(const [needle,label] of map) if(s.replace(/\s+/g,"").includes(needle)) return label;
-    return BREAKDOWNS.find(x=>x.toLowerCase()===s) || "";
+
+    for(const [needle,label] of map){
+        if(s.replace(/\s+/g,"").includes(needle))return label;
+    }
+
+    return BREAKDOWNS.find(x=>x.toLowerCase()===s)||"";
 }
+
 function normalizeProof(v){
     const s=String(v ?? "").trim().toLowerCase();
-    if(!s) return "";
+    if(!s)return "";
     return s.includes("sudah") ? "Sudah Dikirim" : "Belum Dikirim";
 }
+
 function amountNumber(v){
-    if(v===null || v===undefined || v==="") return null;
-    if(typeof v==="number") return v;
+    if(v===null || v===undefined || v==="")return null;
+    if(typeof v==="number")return v;
+
     const s=String(v).replace(/[^\d,.-]/g,"").replace(/\./g,"").replace(",",".");
     const n=Number(s);
-    return Number.isFinite(n) ? n : null;
+    return Number.isFinite(n)?n:null;
 }
-function isMonthHeader(header, month){
+
+function isMonthHeader(header,month){
     const n=normalize(header);
     return month.aliases.some(alias=>n===normalize(alias));
 }
+
 function findMonthColumns(headers){
     const result={};
+
     MONTH_MAP.forEach(month=>{
         const idx=headers.findIndex(h=>isMonthHeader(h,month));
-        if(idx<0) return;
+        if(idx<0)return;
+
         result[month.key]={
             amount:idx,
-            status: idx+1 < headers.length && normalize(headers[idx+1]).includes("statusbayar") ? idx+1 : null,
-            breakdown: idx+2 < headers.length && normalize(headers[idx+2]).includes("breakdown") ? idx+2 : null,
-            proof: idx+3 < headers.length && normalize(headers[idx+3]).includes("kirimbuktibayar") ? idx+3 : null
+            status:idx+1<headers.length && normalize(headers[idx+1]).includes("statusbayar") ? idx+1 : null,
+            breakdown:idx+2<headers.length && normalize(headers[idx+2]).includes("breakdown") ? idx+2 : null,
+            proof:idx+3<headers.length && normalize(headers[idx+3]).includes("kirimbuktibayar") ? idx+3 : null
         };
     });
+
     return result;
 }
-function findHeaderIndex(headers, aliases){
+
+function findHeaderIndex(headers,aliases){
     return headers.findIndex(h=>{
         const n=normalize(h);
         return aliases.some(a=>n===normalize(a) || n.includes(normalize(a)));
     });
 }
+
 function makeAthleteId(){
-    return "A" + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+    return "A"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 }
+
 function findExistingAthlete(nra,name){
     const clean=cleanNra(nra);
+
     if(clean){
         const byNra=db.athletes.find(a=>cleanNra(a.nra)===clean);
-        if(byNra) return byNra;
+        if(byNra)return byNra;
     }
-    return db.athletes.find(a=>!cleanNra(a.nra) && String(a.name||"").trim().toLowerCase()===String(name||"").trim().toLowerCase());
+
+    return db.athletes.find(a=>!cleanNra(a.nra) &&
+        String(a.name||"").trim().toLowerCase()===String(name||"").trim().toLowerCase());
 }
+
 function handleExcel(e){
     const file=e.target.files[0];
     if(!file)return;
+
     document.getElementById("importFileName").textContent="File dipilih: "+file.name;
 
     const reader=new FileReader();
+
     reader.onload=function(evt){
         try{
-            if(typeof XLSX==="undefined"){ throw new Error("Library Excel belum termuat. Buka file saat perangkat terhubung internet, lalu coba lagi."); }
+            if(typeof XLSX==="undefined"){
+                throw new Error("Library Excel belum termuat. Buka file saat perangkat terhubung internet, lalu coba lagi.");
+            }
+
             const wb=XLSX.read(evt.target.result,{type:"array"});
             const ws=wb.Sheets[wb.SheetNames[0]];
             const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:true});
 
-            if(raw.length<2) throw new Error("Sheet Excel kosong.");
+            if(raw.length<2)throw new Error("Sheet Excel kosong.");
+
             const headers=raw[0].map(v=>String(v??"").trim());
             const monthCols=findMonthColumns(headers);
 
@@ -863,7 +1325,7 @@ function handleExcel(e){
             const cParent=findHeaderIndex(headers,["ORANG TUA","ORANGTUA"]);
             const cPhone=findHeaderIndex(headers,["NO. TELP ORTU","NO TELP ORTU","NO TELP","TELEPON"]);
 
-            if(cName<0) throw new Error("Kolom NAMA tidak ditemukan.");
+            if(cName<0)throw new Error("Kolom NAMA tidak ditemukan.");
 
             let added=0,updated=0,ignored=0,monthImported=0;
 
@@ -872,135 +1334,252 @@ function handleExcel(e){
                 const name=String(row[cName]??"").trim();
                 const nra=cleanNra(row[cNra]);
 
-                if(!name || name.toLowerCase().includes("jumlah pemasukan")){ ignored++; continue; }
+                if(!name || name.toLowerCase().includes("jumlah pemasukan")){
+                    ignored++;
+                    continue;
+                }
 
                 let a=findExistingAthlete(nra,name);
+
                 if(!a){
                     a={
-                        id:makeAthleteId(), nra:nra, name:name,
+                        id:makeAthleteId(),
+                        nra:nra,
+                        name:name,
                         parent:cParent>=0?String(row[cParent]??"").trim():"",
                         phone:cPhone>=0?String(row[cPhone]??"").trim():"",
-                        status:"Aktif", joinDate:"", note:nra ? "" : "NRA belum tersedia"
+                        status:"Aktif",
+                        joinDate:"",
+                        bpjsNik:"",
+                        bpjsExp:"",
+                        bpjsDob:"",
+                        bpjsPhone:"",
+                        note:nra ? "" : "NRA belum tersedia"
                     };
                     db.athletes.push(a);
                     added++;
                 }else{
-                    if(nra) a.nra=nra;
-                    if(cParent>=0 && String(row[cParent]??"").trim()) a.parent=String(row[cParent]).trim();
-                    if(cPhone>=0 && String(row[cPhone]??"").trim()) a.phone=String(row[cPhone]).trim();
+                    if(nra)a.nra=nra;
+                    if(cParent>=0 && String(row[cParent]??"").trim())a.parent=String(row[cParent]).trim();
+                    if(cPhone>=0 && String(row[cPhone]??"").trim())a.phone=String(row[cPhone]).trim();
                     updated++;
                 }
 
                 Object.entries(monthCols).forEach(([monthKey,col])=>{
                     const amount=amountNumber(row[col.amount]);
-                    const paid=col.status!==null ? normalizeStatus(row[col.status]) : "";
-                    const breakdown=col.breakdown!==null ? normalizeBreakdown(row[col.breakdown]) : "";
-                    const proof=col.proof!==null ? normalizeProof(row[col.proof]) : "";
+                    const paid=col.status!==null?normalizeStatus(row[col.status]):"";
+                    const breakdown=col.breakdown!==null?normalizeBreakdown(row[col.breakdown]):"";
+                    const proof=col.proof!==null?normalizeProof(row[col.proof]):"";
 
-                    if(amount===null && !paid && !breakdown && !proof) return;
+                    if(amount===null && !paid && !breakdown && !proof)return;
 
-                    if(!db.dues[monthKey]) db.dues[monthKey]={};
-                    const old=db.dues[monthKey][a.id] || { amount:350000, paid:"Belum Bayar", breakdown:"Belum Bayar", proof:"Belum Dikirim" };
+                    if(!db.dues[monthKey])db.dues[monthKey]={};
 
-                    if(amount!==null) old.amount=amount;
-                    else if(!old.amount) old.amount=350000;
-                    if(paid) old.paid=paid;
-                    if(breakdown) old.breakdown=breakdown;
-                    if(proof) old.proof=proof;
-                    if(!paid && breakdown==="Sudah Bayar") old.paid="Sudah Bayar";
-                    if(!proof) old.proof=old.proof||"Belum Dikirim";
+                    const old=db.dues[monthKey][a.id] || {
+                        amount:350000,
+                        paid:"Belum Bayar",
+                        breakdown:"Belum Bayar",
+                        proof:"Belum Dikirim",
+                        paidDate:"",
+                        method:"Transfer",
+                        note:"",
+                        receiptNo:""
+                    };
+
+                    if(amount!==null)old.amount=amount;
+                    else if(!old.amount)old.amount=350000;
+
+                    if(paid)old.paid=paid;
+                    if(breakdown)old.breakdown=breakdown;
+                    if(proof)old.proof=proof;
+
+                    if(!paid && breakdown==="Sudah Bayar")old.paid="Sudah Bayar";
+                    if(!proof)old.proof=old.proof||"Belum Dikirim";
 
                     db.dues[monthKey][a.id]=old;
                     monthImported++;
                 });
             }
-            saveDB(); renderAll();
+
+            saveDB();
+            renderAll();
+
             const missingNra=db.athletes.filter(a=>!cleanNra(a.nra)).length;
             const monthNames=Object.keys(monthCols).map(k=>monthLabel(k)).join(", ");
 
             document.getElementById("importResult").innerHTML=`
                 <div class="notice">
                     <b>✅ Import berhasil.</b><br><br>
-                    Atlet baru: <b>${added}</b> | Data atlet diperbarui: <b>${updated}</b><br>
+                    Atlet baru: <b>${added}</b><br>
+                    Data atlet diperbarui: <b>${updated}</b><br>
+                    Baris Excel diabaikan: <b>${ignored}</b><br>
                     Data pembayaran yang terbaca: <b>${monthImported}</b><br>
-                    Total atlet dalam aplikasi: <b>${db.athletes.length}</b><br><br>
-                    Bulan yang terbaca: ${esc(monthNames || "Tidak ada")}
+                    Total atlet dalam aplikasi: <b>${db.athletes.length}</b><br>
+                    Atlet tanpa NRA: <b>${missingNra}</b><br><br>
+                    Bulan yang terbaca: ${esc(monthNames||"Tidak ada")}
                 </div>`;
         }catch(err){
-            document.getElementById("importResult").innerHTML=`<div style="padding:12px;background:#fdebec;color:#9d1c2a;border-radius:8px;font-size:12px"><b>Import gagal:</b> ${esc(err.message)}</div>`;
+            document.getElementById("importResult").innerHTML=
+                `<div style="padding:12px;background:#fdebec;color:#9d1c2a;border-radius:8px;font-size:12px">
+                    <b>Import gagal:</b> ${esc(err.message)}
+                </div>`;
         }
     };
+
     reader.readAsArrayBuffer(file);
 }
 
-/* FUNGSI BARU: EXPORT BPJS */
-function exportBPJS(type){
-    if (typeof XLSX === "undefined") {
-        alert("Library Excel belum termuat. Pastikan komputer terhubung ke internet.");
+/* ============================
+   EXPORT BPJS TK
+   ============================ */
+
+function sanitizeFileName(s){
+    return String(s||"file").replace(/[\\/:*?"<>|]+/g,"_").replace(/\s+/g,"_");
+}
+
+function ensureXlsx(){
+    if(typeof XLSX==="undefined"){
+        alert("Library Excel belum termuat. Pastikan perangkat terhubung internet saat membuka aplikasi.");
+        return false;
+    }
+    return true;
+}
+
+function getBpjsPaidNewList(){
+    return getPaidBpjsAthletes().filter(a=>bpjsClassification(a)==="new");
+}
+
+function getBpjsPaidRenewList(){
+    return getPaidBpjsAthletes().filter(a=>bpjsClassification(a)==="renew");
+}
+
+function exportBpjsRenew(){
+    if(!ensureXlsx())return;
+
+    const list=getBpjsPaidRenewList();
+    if(!list.length){
+        alert("Tidak ada peserta yang memenuhi syarat perpanjangan untuk "+monthLabel(currentMonth)+".");
         return;
     }
-    
-    const active = getActiveAthletes();
-    let dataToExport = [];
-    
-    // Saring atlet berdasarkan status pembayaran dan breakdown
-    active.forEach(a => {
-        ensureDuesForAthlete(a.id);
-        const d = db.dues[currentMonth][a.id];
-        if (d && d.paid === "Sudah Bayar") {
-            if (type === "baru" && d.breakdown === "Atlet Baru") {
-                dataToExport.push(a);
-            } else if (type === "perpanjang" && d.breakdown !== "Atlet Baru") {
-                dataToExport.push(a);
-            }
-        }
+
+    const c=getBpjsConfig();
+
+    // Struktur mengikuti template:
+    // A Nomor Identitas*
+    // B NAMA
+    // C Upah*
+    // D Kode Paket*
+    // E Bulan Iuran*
+    // F EXP
+    const rows=[
+        [null,null,null,"List Kode Paket","List Bulan Iuran",null],
+        ["Nomor Identitas*","NAMA","Upah*","Kode Paket*","Bulan Iuran*","EXP"]
+    ];
+
+    list.forEach(a=>{
+        rows.push([
+            String(a.bpjsNik||""),
+            String(a.name||""),
+            Number(c.wage)||1000000,
+            String(c.package||"T"),
+            Number(c.months)||3,
+            formatExcelDateDDMMYYYY(a.bpjsExp)
+        ]);
     });
 
-    if (dataToExport.length === 0) {
-        alert(`Tidak ada data atlet yang sudah bayar dengan kategori ${type === 'baru' ? 'Atlet Baru' : 'Perpanjangan'} pada bulan ini.`);
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws["D1"]={t:"s",v:"List Kode Paket"};
+    ws["E1"]={t:"s",v:"List Bulan Iuran"};
+
+    ws["!cols"]=[
+        {wch:20},{wch:40},{wch:14},{wch:16},{wch:16},{wch:14}
+    ];
+
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Sheet1");
+
+    const filename=`PERPANJANGAN_BPJS_TK_${sanitizeFileName(monthLabel(currentMonth))}.xlsx`;
+    XLSX.writeFile(wb,filename);
+
+    alert(`Export perpanjangan berhasil: ${list.length} peserta.`);
+}
+
+function exportBpjsNew(){
+    if(!ensureXlsx())return;
+
+    const list=getBpjsPaidNewList();
+    if(!list.length){
+        alert("Tidak ada peserta yang memenuhi syarat pendaftaran baru untuk "+monthLabel(currentMonth)+".");
         return;
     }
 
-    const wb = XLSX.utils.book_new();
-    let wsData = [];
-    let fileName = "";
+    const c=getBpjsConfig();
 
-    // Fungsi format tanggal lahir YYYY-MM-DD -> DD-MM-YYYY untuk BPJS
-    function formatDob(d) {
-        if (!d) return "";
-        const p = d.split("-");
-        if (p.length === 3) return `${p[2]}-${p[1]}-${p[0]}`;
-        return d;
+    let incomplete=0;
+
+    // Struktur mengikuti template:
+    // A Nomor Identitas*
+    // B Nama Lengkap*
+    // C Tgl. Lahir*
+    // D Handphone*
+    // E Email
+    // F Jenis Pekerjaan 1*
+    // G Jenis Pekerjaan 2
+    // H Lokasi Pekerjaan*
+    // I Upah*
+    // J Kode Paket*
+    // K Bulan Iuran*
+    // L Kode Bank
+    // M Nama Bank
+    // N No Rekening
+    // O Nama Rekening
+    // P Nama Ibu Kandung
+    const rows=[
+        [null,null,"Format: DD-MM-YYYY","FORMAT: Diawali '08'",null,"List Jenis Pekerjaan","List Jenis Pekerjaan.1","List Lokasi Pekerjaan",null,"List Kode Paket","List Bulan Iuran","List Kode bank",null,null,null,null],
+        ["Nomor Identitas*","Nama Lengkap*","Tgl. Lahir*","Handphone*","Email","Jenis Pekerjaan 1*","Jenis Pekerjaan 2","Lokasi Pekerjaan*","Upah*","Kode Paket*","Bulan Iuran*","Kode Bank","Nama Bank","No Rekening","Nama Rekening","Nama Ibu Kandung"]
+    ];
+
+    list.forEach(a=>{
+        if(!a.bpjsDob || !a.bpjsPhone)incomplete++;
+
+        rows.push([
+            String(a.bpjsNik||""),
+            String(a.name||""),
+            formatExcelDateDDMMYYYY(a.bpjsDob),
+            String(a.bpjsPhone||""),
+            "",
+            String(a.bpjsJob1||c.job1||"P060"),
+            String(a.bpjsJob2||c.job2||""),
+            String(a.bpjsLocation||c.location||"3275"),
+            Number(c.wage)||1000000,
+            String(c.package||"T"),
+            Number(c.months)||3,
+            "",
+            "",
+            "",
+            "",
+            ""
+        ]);
+    });
+
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+
+    ws["!cols"]=[
+        {wch:20},{wch:40},{wch:15},{wch:20},{wch:25},{wch:18},{wch:18},{wch:18},
+        {wch:14},{wch:14},{wch:16},{wch:12},{wch:22},{wch:18},{wch:22},{wch:24}
+    ];
+
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Sheet1");
+
+    const filename=`PENDAFTARAN_BPJS_TK_BARU_${sanitizeFileName(monthLabel(currentMonth))}.xlsx`;
+    XLSX.writeFile(wb,filename);
+
+    let msg=`Export pendaftaran baru berhasil: ${list.length} peserta.`;
+    if(incomplete){
+        msg+=` Ada ${incomplete} peserta yang Tanggal Lahir dan/atau HP BPJS TK-nya masih kosong; lengkapi sebelum upload ke BPJS bila kolom tersebut wajib.`;
     }
-
-    if (type === "baru") {
-        fileName = `PENDAFTARAN_BPJS_TK_BARU_${monthLabel(currentMonth).toUpperCase().replace(/\s/g, "_")}.xlsx`;
-        
-        // Header mengikuti template BPJSTK Baru
-        wsData.push(["", "", "Format: DD-MM-YYYY", "FORMAT: Diawali '08'", "", "List Jenis Pekerjaan", "List Jenis Pekerjaan.1", "List Lokasi Pekerjaan", "", "List Kode Paket", "List Bulan Iuran", "List Kode bank", "", "", "", ""]);
-        wsData.push(["Nomor Identitas*", "Nama Lengkap*", "Tgl. Lahir*", "Handphone*", "Email", "Jenis Pekerjaan 1*", "Jenis Pekerjaan 2", "Lokasi Pekerjaan*", "Upah*", "Kode Paket*", "Bulan Iuran*", "Kode Bank", "Nama Bank", "No Rekening", "Nama Rekening", "Nama Ibu Kandung"]);
-        
-        dataToExport.forEach(a => {
-            let phone = a.phone || "";
-            // Mapping data atlet ke kolom BPJSTK
-            wsData.push([a.nik || "", a.name, formatDob(a.dob), phone, "", "P060", "", "3275", 1000000, "T", 3, "", "", "", "", ""]);
-        });
-    } else {
-        fileName = `PERPANJANGAN_BPJS_TK_${monthLabel(currentMonth).toUpperCase().replace(/\s/g, "_")}.xlsx`;
-        
-        // Header mengikuti template BPJSTK Perpanjangan
-        wsData.push(["", "", "", "List Kode Paket", "List Bulan Iuran", "", "", "", "", "", "", ""]);
-        wsData.push(["Nomor Identitas*", "NAMA", "Upah*", "Kode Paket*", "Bulan Iuran*", "EXP", "", "", "", "", "", ""]);
-        
-        dataToExport.forEach(a => {
-            // Mapping data atlet ke kolom BPJSTK (Untuk perpanjangan Tgl. Lahir dsb tidak diperlukan)
-            wsData.push([a.nik || "", a.name, 1000000, "T", 3, "", "", "", "", "", "", ""]);
-        });
-    }
-
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(wb, fileName);
+    alert(msg);
 }
 
 window.addEventListener("load",init);
