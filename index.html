@@ -203,9 +203,16 @@
         <!-- DUES -->
         <section id="dues" class="page">
             <div class="card">
-                <div class="toolbar">
-                    <input id="duesSearch" placeholder="🔎 Cari atlet..." style="min-width:260px">
-                    <button class="btn btn-primary" onclick="addMissingDues()">＋ Buat Data Bulan Ini</button>
+                <div class="toolbar" style="justify-content: space-between;">
+                    <div style="display: flex; gap: 9px; align-items: center; flex-wrap: wrap;">
+                        <input id="duesSearch" placeholder="🔎 Cari atlet..." style="min-width:260px">
+                        <button class="btn btn-primary" onclick="addMissingDues()">＋ Buat Data Bulan Ini</button>
+                    </div>
+                    <!-- TOMBOL BARU UNTUK EXPORT BPJS -->
+                    <div style="display: flex; gap: 9px; align-items: center; flex-wrap: wrap;">
+                        <button class="btn btn-success" onclick="exportBPJS('baru')">📥 Export BPJS Baru</button>
+                        <button class="btn btn-warning" onclick="exportBPJS('perpanjang')" style="color:#000;">📥 Export BPJS Perpanjang</button>
+                    </div>
                 </div>
                 <div class="notice">
                     Nominal default iuran: <b>Rp350.000</b> jika nominal di Excel kosong tetapi status menunjukkan belum bayar.
@@ -284,6 +291,10 @@
         <div class="form-grid">
             <div class="field"><label>NRA</label><input class="form-control" id="fNra" placeholder="NRA-251198"></div>
             <div class="field"><label>Nama Atlet</label><input class="form-control" id="fName"></div>
+            <!-- INPUT BARU UNTUK NIK DAN TANGGAL LAHIR -->
+            <div class="field"><label>NIK (No. Identitas BPJS)</label><input class="form-control" id="fNik" placeholder="Contoh: 327504261010005"></div>
+            <div class="field"><label>Tanggal Lahir</label><input type="date" class="form-control" id="fDob"></div>
+            
             <div class="field"><label>Orang Tua</label><input class="form-control" id="fParent"></div>
             <div class="field"><label>No. Telp Ortu</label><input class="form-control" id="fPhone"></div>
             <div class="field"><label>Status Atlet</label>
@@ -366,17 +377,14 @@ const database = firebase.database();
 
 let db = { athletes: [], dues: {} };
 let currentMonth = localStorage.getItem("nagarajaMonth") || "2026-09";
-
-// TAMBAHAN: Variabel pengunci agar tidak menimpa database dengan data kosong
 let isDataLoaded = false; 
 
 function saveDB(){
-    // TAMBAHAN: Cegah penyimpanan jika data asli belum turun dari Firebase
     if (!isDataLoaded) return; 
     database.ref('nagarajaDB').set(db);
 }
 
-// Sinkronisasi Real-time dari Firebase ke Aplikasi
+// Sinkronisasi Real-time
 database.ref('nagarajaDB').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
@@ -384,7 +392,6 @@ database.ref('nagarajaDB').on('value', (snapshot) => {
         if (!db.athletes) db.athletes = [];
         if (!db.dues) db.dues = {};
     }
-    // TAMBAHAN: Buka kunci setelah data berhasil ditarik
     isDataLoaded = true; 
     renderAll();
 });
@@ -553,6 +560,11 @@ function openAthleteModal(id=null){
     const a=id?db.athletes.find(x=>x.id===id):{};
     document.getElementById("fNra").value=a.nra||"";
     document.getElementById("fName").value=a.name||"";
+    
+    // BACA NIK & DOB YANG BARU DITAMBAHKAN
+    document.getElementById("fNik").value=a.nik||"";
+    document.getElementById("fDob").value=a.dob||"";
+    
     document.getElementById("fParent").value=a.parent||"";
     document.getElementById("fPhone").value=a.phone||"";
     document.getElementById("fStatus").value=a.status||"Aktif";
@@ -565,6 +577,11 @@ function saveAthlete(){
         id:id||("A"+Date.now()),
         nra:document.getElementById("fNra").value.trim(),
         name:document.getElementById("fName").value.trim(),
+        
+        // SIMPAN NIK & DOB
+        nik:document.getElementById("fNik").value.trim(),
+        dob:document.getElementById("fDob").value,
+        
         parent:document.getElementById("fParent").value.trim(),
         phone:document.getElementById("fPhone").value.trim(),
         status:document.getElementById("fStatus").value,
@@ -742,29 +759,19 @@ function renderReceipts(){
     tb.innerHTML=rows.length?rows.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.d.receiptNo||"Belum dibuat")}</b></td><td>${esc(x.a.name)}</td><td>${esc(monthLabel(x.mk))}</td><td>${esc(fmtDate(x.d.paidDate)||"-")}</td><td>${rupiah(x.d.amount)}</td><td><button class="btn btn-primary btn-sm" onclick="currentMonth='${x.mk}';document.getElementById('globalMonth').value=currentMonth;localStorage.setItem('nagarajaMonth',currentMonth);generateReceipt('${esc(x.a.id)}')">🧾 Generate</button></td></tr>`).join(""):`<tr><td colspan="7" class="empty">Belum ada pembayaran yang berstatus Sudah Bayar.</td></tr>`;
 }
 
-/* IMPORT EXCEL - mengikuti struktur file Iuran 2026 */
+/* IMPORT EXCEL */
 const MONTH_MAP = [
-    {key:"2026-01", aliases:["jan","januari"]},
-    {key:"2026-02", aliases:["feb","februari"]},
-    {key:"2026-03", aliases:["mar","maret"]},
-    {key:"2026-04", aliases:["apr","april"]},
-    {key:"2026-05", aliases:["may","mei","may"]},
-    {key:"2026-06", aliases:["jun","juni"]},
-    {key:"2026-07", aliases:["jul","juli"]},
-    {key:"2026-08", aliases:["aug","agu","agustus"]},
-    {key:"2026-09", aliases:["sep","sept","september"]},
-    {key:"2026-10", aliases:["oct","okt","october","oktober"]},
-    {key:"2026-11", aliases:["nov","november"]},
-    {key:"2026-12", aliases:["dec","des","december","desember"]}
+    {key:"2026-01", aliases:["jan","januari"]}, {key:"2026-02", aliases:["feb","februari"]},
+    {key:"2026-03", aliases:["mar","maret"]}, {key:"2026-04", aliases:["apr","april"]},
+    {key:"2026-05", aliases:["may","mei","may"]}, {key:"2026-06", aliases:["jun","juni"]},
+    {key:"2026-07", aliases:["jul","juli"]}, {key:"2026-08", aliases:["aug","agu","agustus"]},
+    {key:"2026-09", aliases:["sep","sept","september"]}, {key:"2026-10", aliases:["oct","okt","october","oktober"]},
+    {key:"2026-11", aliases:["nov","november"]}, {key:"2026-12", aliases:["dec","des","december","desember"]}
 ];
 
-function normalize(v){
-    return String(v ?? "").trim().toLowerCase()
-        .replace(/[._\-\s]+/g,"");
-}
+function normalize(v){ return String(v ?? "").trim().toLowerCase().replace(/[._\-\s]+/g,""); }
 function cleanNra(v){
     const s=String(v ?? "").trim();
-    // "NRA -", "NRA-", "NRA - " dianggap belum punya NRA
     const stripped=s.toLowerCase().replace(/[\s\-_:]/g,"");
     if(!s || stripped==="nra") return "";
     return s;
@@ -831,9 +838,7 @@ function findExistingAthlete(nra,name){
         const byNra=db.athletes.find(a=>cleanNra(a.nra)===clean);
         if(byNra) return byNra;
     }
-    // Untuk atlet tanpa NRA, gunakan nama sebagai identitas sementara.
-    return db.athletes.find(a=>!cleanNra(a.nra) &&
-        String(a.name||"").trim().toLowerCase()===String(name||"").trim().toLowerCase());
+    return db.athletes.find(a=>!cleanNra(a.nra) && String(a.name||"").trim().toLowerCase()===String(name||"").trim().toLowerCase());
 }
 function handleExcel(e){
     const file=e.target.files[0];
@@ -843,10 +848,7 @@ function handleExcel(e){
     const reader=new FileReader();
     reader.onload=function(evt){
         try{
-            if(typeof XLSX==="undefined"){
-                throw new Error("Library Excel belum termuat. Buka file saat perangkat terhubung internet, lalu coba lagi.");
-            }
-
+            if(typeof XLSX==="undefined"){ throw new Error("Library Excel belum termuat. Buka file saat perangkat terhubung internet, lalu coba lagi."); }
             const wb=XLSX.read(evt.target.result,{type:"array"});
             const ws=wb.Sheets[wb.SheetNames[0]];
             const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:true});
@@ -864,30 +866,21 @@ function handleExcel(e){
             if(cName<0) throw new Error("Kolom NAMA tidak ditemukan.");
 
             let added=0,updated=0,ignored=0,monthImported=0;
-            const importedNames=[];
 
             for(let r=1;r<raw.length;r++){
                 const row=raw[r];
                 const name=String(row[cName]??"").trim();
                 const nra=cleanNra(row[cNra]);
 
-                // Abaikan baris kosong dan baris footer seperti "JUMLAH PEMASUKAN IURAN"
-                if(!name || name.toLowerCase().includes("jumlah pemasukan")){
-                    ignored++;
-                    continue;
-                }
+                if(!name || name.toLowerCase().includes("jumlah pemasukan")){ ignored++; continue; }
 
                 let a=findExistingAthlete(nra,name);
                 if(!a){
                     a={
-                        id:makeAthleteId(),
-                        nra:nra,
-                        name:name,
+                        id:makeAthleteId(), nra:nra, name:name,
                         parent:cParent>=0?String(row[cParent]??"").trim():"",
                         phone:cPhone>=0?String(row[cPhone]??"").trim():"",
-                        status:"Aktif",
-                        joinDate:"",
-                        note:nra ? "" : "NRA belum tersedia"
+                        status:"Aktif", joinDate:"", note:nra ? "" : "NRA belum tersedia"
                     };
                     db.athletes.push(a);
                     added++;
@@ -897,32 +890,23 @@ function handleExcel(e){
                     if(cPhone>=0 && String(row[cPhone]??"").trim()) a.phone=String(row[cPhone]).trim();
                     updated++;
                 }
-                importedNames.push(name);
 
-                // Import semua bulan yang memang memiliki kolom pada Excel.
                 Object.entries(monthCols).forEach(([monthKey,col])=>{
                     const amount=amountNumber(row[col.amount]);
                     const paid=col.status!==null ? normalizeStatus(row[col.status]) : "";
                     const breakdown=col.breakdown!==null ? normalizeBreakdown(row[col.breakdown]) : "";
                     const proof=col.proof!==null ? normalizeProof(row[col.proof]) : "";
 
-                    // Kalau tidak ada data sama sekali di bulan tersebut, jangan membuat record palsu.
                     if(amount===null && !paid && !breakdown && !proof) return;
 
                     if(!db.dues[monthKey]) db.dues[monthKey]={};
-                    const old=db.dues[monthKey][a.id] || {
-                        amount:350000, paid:"Belum Bayar", breakdown:"Belum Bayar", proof:"Belum Dikirim"
-                    };
+                    const old=db.dues[monthKey][a.id] || { amount:350000, paid:"Belum Bayar", breakdown:"Belum Bayar", proof:"Belum Dikirim" };
 
                     if(amount!==null) old.amount=amount;
                     else if(!old.amount) old.amount=350000;
-
                     if(paid) old.paid=paid;
                     if(breakdown) old.breakdown=breakdown;
                     if(proof) old.proof=proof;
-
-                    // Jika status bayar belum diisi tetapi breakdown sudah "Sudah Bayar",
-                    // ikuti breakdown agar data Excel lama tetap terbaca.
                     if(!paid && breakdown==="Sudah Bayar") old.paid="Sudah Bayar";
                     if(!proof) old.proof=old.proof||"Belum Dikirim";
 
@@ -930,33 +914,95 @@ function handleExcel(e){
                     monthImported++;
                 });
             }
-
-            saveDB();
-            renderAll();
-
+            saveDB(); renderAll();
             const missingNra=db.athletes.filter(a=>!cleanNra(a.nra)).length;
             const monthNames=Object.keys(monthCols).map(k=>monthLabel(k)).join(", ");
 
             document.getElementById("importResult").innerHTML=`
                 <div class="notice">
                     <b>✅ Import berhasil.</b><br><br>
-                    Atlet baru: <b>${added}</b><br>
-                    Data atlet diperbarui: <b>${updated}</b><br>
-                    Baris Excel diabaikan: <b>${ignored}</b><br>
+                    Atlet baru: <b>${added}</b> | Data atlet diperbarui: <b>${updated}</b><br>
                     Data pembayaran yang terbaca: <b>${monthImported}</b><br>
-                    Total atlet dalam aplikasi: <b>${db.athletes.length}</b><br>
-                    Atlet tanpa NRA: <b>${missingNra}</b><br><br>
+                    Total atlet dalam aplikasi: <b>${db.athletes.length}</b><br><br>
                     Bulan yang terbaca: ${esc(monthNames || "Tidak ada")}
                 </div>`;
         }catch(err){
-            document.getElementById("importResult").innerHTML=
-                `<div style="padding:12px;background:#fdebec;color:#9d1c2a;border-radius:8px;font-size:12px">
-                    <b>Import gagal:</b> ${esc(err.message)}
-                </div>`;
+            document.getElementById("importResult").innerHTML=`<div style="padding:12px;background:#fdebec;color:#9d1c2a;border-radius:8px;font-size:12px"><b>Import gagal:</b> ${esc(err.message)}</div>`;
         }
     };
     reader.readAsArrayBuffer(file);
 }
+
+/* FUNGSI BARU: EXPORT BPJS */
+function exportBPJS(type){
+    if (typeof XLSX === "undefined") {
+        alert("Library Excel belum termuat. Pastikan komputer terhubung ke internet.");
+        return;
+    }
+    
+    const active = getActiveAthletes();
+    let dataToExport = [];
+    
+    // Saring atlet berdasarkan status pembayaran dan breakdown
+    active.forEach(a => {
+        ensureDuesForAthlete(a.id);
+        const d = db.dues[currentMonth][a.id];
+        if (d && d.paid === "Sudah Bayar") {
+            if (type === "baru" && d.breakdown === "Atlet Baru") {
+                dataToExport.push(a);
+            } else if (type === "perpanjang" && d.breakdown !== "Atlet Baru") {
+                dataToExport.push(a);
+            }
+        }
+    });
+
+    if (dataToExport.length === 0) {
+        alert(`Tidak ada data atlet yang sudah bayar dengan kategori ${type === 'baru' ? 'Atlet Baru' : 'Perpanjangan'} pada bulan ini.`);
+        return;
+    }
+
+    const wb = XLSX.utils.book_new();
+    let wsData = [];
+    let fileName = "";
+
+    // Fungsi format tanggal lahir YYYY-MM-DD -> DD-MM-YYYY untuk BPJS
+    function formatDob(d) {
+        if (!d) return "";
+        const p = d.split("-");
+        if (p.length === 3) return `${p[2]}-${p[1]}-${p[0]}`;
+        return d;
+    }
+
+    if (type === "baru") {
+        fileName = `PENDAFTARAN_BPJS_TK_BARU_${monthLabel(currentMonth).toUpperCase().replace(/\s/g, "_")}.xlsx`;
+        
+        // Header mengikuti template BPJSTK Baru
+        wsData.push(["", "", "Format: DD-MM-YYYY", "FORMAT: Diawali '08'", "", "List Jenis Pekerjaan", "List Jenis Pekerjaan.1", "List Lokasi Pekerjaan", "", "List Kode Paket", "List Bulan Iuran", "List Kode bank", "", "", "", ""]);
+        wsData.push(["Nomor Identitas*", "Nama Lengkap*", "Tgl. Lahir*", "Handphone*", "Email", "Jenis Pekerjaan 1*", "Jenis Pekerjaan 2", "Lokasi Pekerjaan*", "Upah*", "Kode Paket*", "Bulan Iuran*", "Kode Bank", "Nama Bank", "No Rekening", "Nama Rekening", "Nama Ibu Kandung"]);
+        
+        dataToExport.forEach(a => {
+            let phone = a.phone || "";
+            // Mapping data atlet ke kolom BPJSTK
+            wsData.push([a.nik || "", a.name, formatDob(a.dob), phone, "", "P060", "", "3275", 1000000, "T", 3, "", "", "", "", ""]);
+        });
+    } else {
+        fileName = `PERPANJANGAN_BPJS_TK_${monthLabel(currentMonth).toUpperCase().replace(/\s/g, "_")}.xlsx`;
+        
+        // Header mengikuti template BPJSTK Perpanjangan
+        wsData.push(["", "", "", "List Kode Paket", "List Bulan Iuran", "", "", "", "", "", "", ""]);
+        wsData.push(["Nomor Identitas*", "NAMA", "Upah*", "Kode Paket*", "Bulan Iuran*", "EXP", "", "", "", "", "", ""]);
+        
+        dataToExport.forEach(a => {
+            // Mapping data atlet ke kolom BPJSTK (Untuk perpanjangan Tgl. Lahir dsb tidak diperlukan)
+            wsData.push([a.nik || "", a.name, 1000000, "T", 3, "", "", "", "", "", "", ""]);
+        });
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, fileName);
+}
+
 window.addEventListener("load",init);
 </script>
 </body>
