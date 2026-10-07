@@ -8,25 +8,12 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
     :root{
-        --primary:#0f6fae;
-        --primary-dark:#0a5687;
-        --bg:#f4f7fb;
-        --card:#fff;
-        --text:#1f2937;
-        --muted:#6b7280;
-        --border:#dce3ea;
-        --success:#198754;
-        --danger:#dc3545;
-        --warning:#f59e0b;
-        --info:#2563eb;
+        --primary:#0f6fae; --primary-dark:#0a5687; --bg:#f4f7fb; --card:#fff;
+        --text:#1f2937; --muted:#6b7280; --border:#dce3ea; --success:#198754;
+        --danger:#dc3545; --warning:#f59e0b; --info:#2563eb;
     }
     *{box-sizing:border-box}
-    body{
-        margin:0;
-        font-family:Arial,Helvetica,sans-serif;
-        background:var(--bg);
-        color:var(--text);
-    }
+    body{ margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--bg); color:var(--text); }
     button,input,select{font:inherit}
     .app{display:flex;min-height:100vh}
     .sidebar{
@@ -61,9 +48,7 @@
         border:1px solid var(--border);border-radius:8px;padding:10px 11px;background:#fff;outline:none;
     }
     .toolbar input:focus,.toolbar select:focus,.form-control:focus{border-color:var(--primary)}
-    .btn{
-        border:0;border-radius:8px;padding:10px 13px;cursor:pointer;font-weight:700;
-    }
+    .btn{ border:0;border-radius:8px;padding:10px 13px;cursor:pointer;font-weight:700; }
     .btn-primary{background:var(--primary);color:white}
     .btn-primary:hover{background:var(--primary-dark)}
     .btn-secondary{background:#e9eef3;color:#334155}
@@ -148,7 +133,6 @@
                 <div class="card"><div class="card-label">BELUM BAYAR</div><div class="card-value" id="statUnpaid">0</div><div class="card-note" id="statUnpaidAmount">Rp0</div></div>
                 <div class="card"><div class="card-label">BUKTI BELUM DIKIRIM</div><div class="card-value" id="statProof">0</div><div class="card-note">Perlu follow up</div></div>
             </div>
-
             <div class="grid2">
                 <div class="card">
                     <div class="section-title">Ringkasan Iuran</div>
@@ -166,13 +150,11 @@
                         <span>Belum masuk</span><strong id="totalUnpaid">Rp0</strong>
                     </div>
                 </div>
-
                 <div class="card">
                     <div class="section-title">Breakdown Bulan Ini</div>
                     <div id="breakdownList"></div>
                 </div>
             </div>
-
             <div class="card" style="margin-top:18px">
                 <div class="section-title">⚠️ Perlu Follow Up</div>
                 <div id="dashboardFollowup"></div>
@@ -193,7 +175,8 @@
                 </div>
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>No</th><th>NRA</th><th>Nama Atlet</th><th>Orang Tua</th><th>No. Telp</th><th>Status</th><th>Action</th></tr></thead>
+                        <!-- MODIFIKASI: Menambah Kolom BPJS Exp -->
+                        <thead><tr><th>No</th><th>NRA / NIK</th><th>Nama Atlet</th><th>Orang Tua</th><th>No. Telp</th><th>BPJS Exp</th><th>Status</th><th>Action</th></tr></thead>
                         <tbody id="athleteTable"></tbody>
                     </table>
                 </div>
@@ -208,7 +191,6 @@
                         <input id="duesSearch" placeholder="🔎 Cari atlet..." style="min-width:260px">
                         <button class="btn btn-primary" onclick="addMissingDues()">＋ Buat Data Bulan Ini</button>
                     </div>
-                    <!-- TOMBOL BARU UNTUK EXPORT BPJS -->
                     <div style="display: flex; gap: 9px; align-items: center; flex-wrap: wrap;">
                         <button class="btn btn-success" onclick="exportBPJS('baru')">📥 Export BPJS Baru</button>
                         <button class="btn btn-warning" onclick="exportBPJS('perpanjang')" style="color:#000;">📥 Export BPJS Perpanjang</button>
@@ -216,8 +198,6 @@
                 </div>
                 <div class="notice">
                     Nominal default iuran: <b>Rp350.000</b> jika nominal di Excel kosong tetapi status menunjukkan belum bayar.
-                    &nbsp; | &nbsp; Status Bayar: <b>Sudah Bayar / Belum Bayar</b> &nbsp; | &nbsp;
-                    Breakdown: <b>Sudah Bayar, Belum Bayar, Cuti, Atlet Baru, Akan Join, Pemutihan, Kompensasi</b>
                 </div>
                 <div class="table-wrap">
                     <table>
@@ -230,21 +210,38 @@
 
         <!-- IMPORT -->
         <section id="import" class="page">
-            <div class="card">
-                <div class="section-title">📥 Import Data Atlet & Iuran dari Excel</div>
-                <div class="notice">
-                    Pilih file Excel (.xlsx / .xls). Sistem akan membaca kolom NRA, NAMA, ORANG TUA, NO. TELP ORTU,
-                    serta seluruh kolom iuran Januari–Desember. Atlet yang belum punya NRA tetap dimasukkan.
+            <div class="grid2">
+                <!-- BOX 1: IURAN NORMAL -->
+                <div class="card">
+                    <div class="section-title">📥 Import Data & Iuran Excel (Format Rutin)</div>
+                    <div class="notice">
+                        Pilih file Excel iuran bulanan (.xlsx). Sistem akan merekap status pembayaran Januari–Desember.
+                    </div>
+                    <div class="file-box">
+                        <div style="font-size:38px">📊</div>
+                        <h3>Upload File Iuran Rutin</h3>
+                        <label class="btn btn-primary" for="excelFile">Pilih File Excel</label>
+                        <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+                        <div id="importFileName" style="margin-top:12px;font-size:12px;color:#64748b"></div>
+                    </div>
+                    <div id="importResult"></div>
                 </div>
-                <div class="file-box">
-                    <div style="font-size:38px">📊</div>
-                    <h3>Upload file Excel</h3>
-                    <p style="color:#6b7280;font-size:13px">Data atlet dapat dimasukkan sekaligus, termasuk atlet yang belum memiliki NRA.</p>
-                    <label class="btn btn-primary" for="excelFile">Pilih File Excel</label>
-                    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
-                    <div id="importFileName" style="margin-top:12px;font-size:12px;color:#64748b"></div>
+                
+                <!-- BOX 2: MASTER BPJS -->
+                <div class="card">
+                    <div class="section-title">🛡️ Sinkronisasi MASTER BPJS TK</div>
+                    <div class="notice">
+                        Upload file <b>MASTER BPJS TK.xlsx</b> untuk menyalin NIK dan Tanggal Jatuh Tempo ke profil atlet & coach secara otomatis.
+                    </div>
+                    <div class="file-box" style="background:#fffaf0; border-color:#f59e0b;">
+                        <div style="font-size:38px">🛡️</div>
+                        <h3>Upload Master BPJS TK</h3>
+                        <label class="btn btn-warning" for="bpjsFile" style="color:#000;">Pilih File Master BPJS</label>
+                        <input type="file" id="bpjsFile" accept=".xlsx,.xls">
+                        <div id="bpjsFileName" style="margin-top:12px;font-size:12px;color:#64748b"></div>
+                    </div>
+                    <div id="bpjsResult"></div>
                 </div>
-                <div id="importResult"></div>
             </div>
         </section>
 
@@ -252,10 +249,7 @@
         <section id="receipts" class="page">
             <div class="card">
                 <div class="section-title">🧾 Kwitansi Pembayaran</div>
-                <div class="notice">Kwitansi dibuat otomatis dari data pembayaran yang berstatus <b>Sudah Bayar</b>. Format PDF satu halaman dibuat ringan, dan tersedia juga JPEG.</div>
-                <div class="toolbar">
-                    <input id="receiptSearch" placeholder="🔎 Cari atlet / nomor kwitansi..." style="min-width:260px">
-                </div>
+                <div class="toolbar"><input id="receiptSearch" placeholder="🔎 Cari atlet / nomor kwitansi..." style="min-width:260px"></div>
                 <div class="table-wrap">
                     <table>
                         <thead><tr><th>No</th><th>No. Kwitansi</th><th>Atlet</th><th>Periode</th><th>Tanggal Bayar</th><th>Nominal</th><th>Action</th></tr></thead>
@@ -269,9 +263,7 @@
         <section id="followup" class="page">
             <div class="card">
                 <div class="section-title">📋 Daftar Follow Up — Belum Bayar</div>
-                <div class="toolbar">
-                    <input id="followupSearch" placeholder="🔎 Cari atlet / orang tua...">
-                </div>
+                <div class="toolbar"><input id="followupSearch" placeholder="🔎 Cari atlet / orang tua..."></div>
                 <div class="table-wrap">
                     <table>
                         <thead><tr><th>No</th><th>Atlet</th><th>Orang Tua</th><th>No. HP</th><th>Iuran</th><th>Breakdown</th><th>Action</th></tr></thead>
@@ -291,17 +283,15 @@
         <div class="form-grid">
             <div class="field"><label>NRA</label><input class="form-control" id="fNra" placeholder="NRA-251198"></div>
             <div class="field"><label>Nama Atlet</label><input class="form-control" id="fName"></div>
-            <!-- INPUT BARU UNTUK NIK DAN TANGGAL LAHIR -->
-            <div class="field"><label>NIK (No. Identitas BPJS)</label><input class="form-control" id="fNik" placeholder="Contoh: 327504261010005"></div>
+            <div class="field"><label>NIK (No. Identitas BPJS)</label><input class="form-control" id="fNik"></div>
             <div class="field"><label>Tanggal Lahir</label><input type="date" class="form-control" id="fDob"></div>
             
+            <div class="field"><label>Jatuh Tempo BPJSTK</label><input type="date" class="form-control" id="fBpjsExp"></div>
             <div class="field"><label>Orang Tua</label><input class="form-control" id="fParent"></div>
-            <div class="field"><label>No. Telp Ortu</label><input class="form-control" id="fPhone"></div>
-            <div class="field"><label>Status Atlet</label>
-                <select class="form-control" id="fStatus"><option>Aktif</option><option>Tidak Aktif</option></select>
-            </div>
-            <div class="field"><label>Tanggal Bergabung</label><input type="date" class="form-control" id="fJoinDate"></div>
-            <div class="field full"><label>Catatan</label><input class="form-control" id="fNote"></div>
+            
+            <div class="field"><label>No. Telp Ortu / Pribadi</label><input class="form-control" id="fPhone"></div>
+            <div class="field"><label>Status Atlet</label><select class="form-control" id="fStatus"><option>Aktif</option><option>Tidak Aktif</option></select></div>
+            <div class="field full"><label>Catatan / Keterangan</label><input class="form-control" id="fNote"></div>
         </div>
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="closeModal('athleteModal')">Batal</button>
@@ -318,22 +308,11 @@
         <div class="form-grid">
             <div class="field full"><label>Atlet</label><input class="form-control" id="dAthlete" readonly></div>
             <div class="field"><label>Nominal Iuran</label><input type="number" class="form-control" id="dAmount"></div>
-            <div class="field"><label>Status Bayar</label>
-                <select class="form-control" id="dPaid"><option>Sudah Bayar</option><option>Belum Bayar</option></select>
-            </div>
-            <div class="field"><label>Breakdown</label>
-                <select class="form-control" id="dBreakdown">
-                    <option>Sudah Bayar</option><option>Belum Bayar</option><option>Cuti</option>
-                    <option>Atlet Baru</option><option>Akan Join</option><option>Pemutihan</option><option>Kompensasi</option>
-                </select>
-            </div>
-            <div class="field"><label>Bukti Bayar</label>
-                <select class="form-control" id="dProof"><option>Sudah Dikirim</option><option>Belum Dikirim</option></select>
-            </div>
+            <div class="field"><label>Status Bayar</label><select class="form-control" id="dPaid"><option>Sudah Bayar</option><option>Belum Bayar</option></select></div>
+            <div class="field"><label>Breakdown</label><select class="form-control" id="dBreakdown"><option>Sudah Bayar</option><option>Belum Bayar</option><option>Cuti</option><option>Atlet Baru</option><option>Akan Join</option><option>Pemutihan</option><option>Kompensasi</option></select></div>
+            <div class="field"><label>Bukti Bayar</label><select class="form-control" id="dProof"><option>Sudah Dikirim</option><option>Belum Dikirim</option></select></div>
             <div class="field"><label>Tanggal Bayar</label><input type="date" class="form-control" id="dPaidDate"></div>
-            <div class="field"><label>Metode Pembayaran</label>
-                <select class="form-control" id="dMethod"><option>Transfer</option><option>Tunai</option><option>QRIS</option><option>Lainnya</option></select>
-            </div>
+            <div class="field"><label>Metode Pembayaran</label><select class="form-control" id="dMethod"><option>Transfer</option><option>Tunai</option><option>QRIS</option><option>Lainnya</option></select></div>
             <div class="field full"><label>Keterangan</label><input class="form-control" id="dNote" placeholder="Opsional"></div>
         </div>
         <div class="modal-actions">
@@ -345,81 +324,47 @@
 
 <script>
 const MONTHS = [
-    {key:"2026-09", label:"September 2026"},
-    {key:"2026-10", label:"Oktober 2026"},
-    {key:"2026-11", label:"November 2026"},
-    {key:"2026-12", label:"Desember 2026"},
-    {key:"2027-01", label:"Januari 2027"},
-    {key:"2027-02", label:"Februari 2027"},
-    {key:"2027-03", label:"Maret 2027"},
-    {key:"2027-04", label:"April 2027"},
-    {key:"2027-05", label:"Mei 2027"},
-    {key:"2027-06", label:"Juni 2027"},
-    {key:"2027-07", label:"Juli 2027"},
-    {key:"2027-08", label:"Agustus 2027"}
+    {key:"2026-09", label:"September 2026"}, {key:"2026-10", label:"Oktober 2026"}, {key:"2026-11", label:"November 2026"},
+    {key:"2026-12", label:"Desember 2026"}, {key:"2027-01", label:"Januari 2027"}, {key:"2027-02", label:"Februari 2027"},
+    {key:"2027-03", label:"Maret 2027"}, {key:"2027-04", label:"April 2027"}, {key:"2027-05", label:"Mei 2027"},
+    {key:"2027-06", label:"Juni 2027"}, {key:"2027-07", label:"Juli 2027"}, {key:"2027-08", label:"Agustus 2027"}
 ];
-
 const BREAKDOWNS = ["Sudah Bayar","Belum Bayar","Cuti","Atlet Baru","Akan Join","Pemutihan","Kompensasi"];
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDIvZH2ALPLKnFfGbwCpSGtsY_YDDxzRTY",
-    authDomain: "nagaraja-app.firebaseapp.com",
-    databaseURL: "https://nagaraja-app-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "nagaraja-app",
-    storageBucket: "nagaraja-app.firebasestorage.app",
-    messagingSenderId: "1007087579114",
+    apiKey: "AIzaSyDIvZH2ALPLKnFfGbwCpSGtsY_YDDxzRTY", authDomain: "nagaraja-app.firebaseapp.com",
+    databaseURL: "https://nagaraja-app-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "nagaraja-app",
+    storageBucket: "nagaraja-app.firebasestorage.app", messagingSenderId: "1007087579114",
     appId: "1:1007087579114:web:04fc2124eb1866c5de4c93"
 };
 
-// Inisialisasi Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
-
 let db = { athletes: [], dues: {} };
 let currentMonth = localStorage.getItem("nagarajaMonth") || "2026-09";
 let isDataLoaded = false; 
 
-function saveDB(){
-    if (!isDataLoaded) return; 
-    database.ref('nagarajaDB').set(db);
-}
+function saveDB(){ if (!isDataLoaded) return; database.ref('nagarajaDB').set(db); }
 
-// Sinkronisasi Real-time
 database.ref('nagarajaDB').on('value', (snapshot) => {
     const data = snapshot.val();
-    if (data) {
-        db = data;
-        if (!db.athletes) db.athletes = [];
-        if (!db.dues) db.dues = {};
-    }
-    isDataLoaded = true; 
-    renderAll();
+    if (data) { db = data; if (!db.athletes) db.athletes = []; if (!db.dues) db.dues = {}; }
+    isDataLoaded = true; renderAll();
 });
-function rupiah(n){
-    return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
-}
-function esc(s){
-    return String(s ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-}
-function monthLabel(key){
-    return MONTHS.find(m=>m.key===key)?.label || key;
-}
+
+function rupiah(n){ return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0); }
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c])); }
+function monthLabel(key){ return MONTHS.find(m=>m.key===key)?.label || key; }
+function fmtDate(v){ if(!v)return ""; const p=String(v).split("-"); if(p.length===3)return `${p[2]}-${p[1]}-${p[0]}`; return v; }
+
 function init(){
     const sel=document.getElementById("globalMonth");
     sel.innerHTML=MONTHS.map(m=>`<option value="${m.key}">${m.label}</option>`).join("");
     sel.value=currentMonth;
-    sel.addEventListener("change",()=>{
-        currentMonth=sel.value;
-        localStorage.setItem("nagarajaMonth",currentMonth);
-        renderAll();
-    });
+    sel.addEventListener("change",()=>{ currentMonth=sel.value; localStorage.setItem("nagarajaMonth",currentMonth); renderAll(); });
 
     document.querySelectorAll(".nav button").forEach(btn=>{
-        btn.addEventListener("click",()=>{
-            document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));
-            btn.classList.add("active");
-            showPage(btn.dataset.page);
-        });
+        btn.addEventListener("click",()=>{ document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active")); btn.classList.add("active"); showPage(btn.dataset.page); });
     });
 
     document.getElementById("athleteSearch").addEventListener("input",renderAthletes);
@@ -428,7 +373,7 @@ function init(){
     document.getElementById("followupSearch").addEventListener("input",renderFollowup);
     document.getElementById("receiptSearch").addEventListener("input",renderReceipts);
     document.getElementById("excelFile").addEventListener("change",handleExcel);
-
+    document.getElementById("bpjsFile").addEventListener("change",handleMasterBPJS); // EVENT LISTENER MASTER BPJS
     renderAll();
 }
 function showPage(page){
@@ -440,94 +385,66 @@ function showPage(page){
 }
 function ensureDuesForAthlete(id){
     if(!db.dues[currentMonth]) db.dues[currentMonth]={};
-    if(!db.dues[currentMonth][id]){
-        db.dues[currentMonth][id]={
-            amount:350000,paid:"Belum Bayar",breakdown:"Belum Bayar",proof:"Belum Dikirim",paidDate:"",method:"Transfer",note:"",receiptNo:""
-        };
-    }
+    if(!db.dues[currentMonth][id]){ db.dues[currentMonth][id]={ amount:350000,paid:"Belum Bayar",breakdown:"Belum Bayar",proof:"Belum Dikirim",paidDate:"",method:"Transfer",note:"",receiptNo:"" }; }
 }
 function addMissingDues(){
     db.athletes.filter(a=>a.status==="Aktif").forEach(a=>ensureDuesForAthlete(a.id));
-    saveDB();renderAll();
-    alert("Data iuran bulan "+monthLabel(currentMonth)+" sudah dibuat untuk atlet aktif.");
+    saveDB();renderAll(); alert("Data iuran bulan "+monthLabel(currentMonth)+" sudah dibuat.");
 }
-function renderAll(){
-    renderDashboard();renderAthletes();renderDues();renderFollowup();renderReceipts();
-}
-function getActiveAthletes(){
-    return db.athletes.filter(a=>a.status==="Aktif");
-}
+function renderAll(){ renderDashboard();renderAthletes();renderDues();renderFollowup();renderReceipts(); }
+function getActiveAthletes(){ return db.athletes.filter(a=>a.status==="Aktif"); }
+
 function renderDashboard(){
-    const active=getActiveAthletes();
-    let rows=[];
-    active.forEach(a=>{
-        ensureDuesForAthlete(a.id);
-        rows.push({a,d:db.dues[currentMonth][a.id]});
-    });
-    const paid=rows.filter(x=>x.d.paid==="Sudah Bayar");
-    const unpaid=rows.filter(x=>x.d.paid==="Belum Bayar" && x.d.breakdown==="Belum Bayar");
-    const proof=rows.filter(x=>x.d.proof==="Belum Dikirim");
-    const bill=rows.reduce((s,x)=>s+Number(x.d.amount||0),0);
-    const paidAmount=paid.reduce((s,x)=>s+Number(x.d.amount||0),0);
-    const unpaidAmount=unpaid.reduce((s,x)=>s+Number(x.d.amount||0),0);
+    const active=getActiveAthletes(); let rows=[];
+    active.forEach(a=>{ ensureDuesForAthlete(a.id); rows.push({a,d:db.dues[currentMonth][a.id]}); });
+    const paid=rows.filter(x=>x.d.paid==="Sudah Bayar"); const unpaid=rows.filter(x=>x.d.paid==="Belum Bayar" && x.d.breakdown==="Belum Bayar");
+    const proof=rows.filter(x=>x.d.proof==="Belum Dikirim"); const bill=rows.reduce((s,x)=>s+Number(x.d.amount||0),0);
+    const paidAmount=paid.reduce((s,x)=>s+Number(x.d.amount||0),0); const unpaidAmount=unpaid.reduce((s,x)=>s+Number(x.d.amount||0),0);
     const percent=bill?Math.round(paidAmount/bill*100):0;
 
-    document.getElementById("statActive").textContent=active.length;
-    document.getElementById("statPaid").textContent=paid.length;
-    document.getElementById("statPaidAmount").textContent=rupiah(paidAmount);
-    document.getElementById("statUnpaid").textContent=unpaid.length;
-    document.getElementById("statUnpaidAmount").textContent=rupiah(unpaidAmount);
-    document.getElementById("statProof").textContent=proof.length;
-    document.getElementById("paymentPercent").textContent=percent+"%";
-    document.getElementById("paymentProgress").style.width=percent+"%";
-    document.getElementById("totalBill").textContent=rupiah(bill);
-    document.getElementById("totalPaid").textContent=rupiah(paidAmount);
+    document.getElementById("statActive").textContent=active.length; document.getElementById("statPaid").textContent=paid.length;
+    document.getElementById("statPaidAmount").textContent=rupiah(paidAmount); document.getElementById("statUnpaid").textContent=unpaid.length;
+    document.getElementById("statUnpaidAmount").textContent=rupiah(unpaidAmount); document.getElementById("statProof").textContent=proof.length;
+    document.getElementById("paymentPercent").textContent=percent+"%"; document.getElementById("paymentProgress").style.width=percent+"%";
+    document.getElementById("totalBill").textContent=rupiah(bill); document.getElementById("totalPaid").textContent=rupiah(paidAmount);
     document.getElementById("totalUnpaid").textContent=rupiah(unpaidAmount);
 
-    const counts={};
-    BREAKDOWNS.forEach(x=>counts[x]=0);
+    const counts={}; BREAKDOWNS.forEach(x=>counts[x]=0);
     rows.forEach(x=>counts[x.d.breakdown]=(counts[x.d.breakdown]||0)+1);
-    document.getElementById("breakdownList").innerHTML=Object.entries(counts)
-        .map(([k,v])=>`<div class="breakdown-row"><span>${esc(k)}</span><strong>${v}</strong></div>`).join("");
+    document.getElementById("breakdownList").innerHTML=Object.entries(counts).map(([k,v])=>`<div class="breakdown-row"><span>${esc(k)}</span><strong>${v}</strong></div>`).join("");
 
     const f=unpaid.slice(0,8);
-    document.getElementById("dashboardFollowup").innerHTML=f.length
-        ? `<div class="table-wrap"><table><thead><tr><th>Atlet</th><th>Orang Tua</th><th>No. HP</th><th>Iuran</th><th>Action</th></tr></thead><tbody>
-        ${f.map(x=>`<tr><td>${esc(x.a.name)}</td><td>${esc(x.a.parent)}</td><td>${esc(x.a.phone)}</td><td>${rupiah(x.d.amount)}</td>
-        <td><button class="btn btn-success btn-sm" onclick="whatsappFollowup('${esc(x.a.id)}')">WhatsApp</button></td></tr>`).join("")}
-        </tbody></table></div>`
-        : `<div class="empty">Tidak ada tunggakan normal pada bulan ini 🎉</div>`;
+    document.getElementById("dashboardFollowup").innerHTML=f.length ? `<div class="table-wrap"><table><thead><tr><th>Atlet</th><th>Orang Tua</th><th>No. HP</th><th>Iuran</th><th>Action</th></tr></thead><tbody>${f.map(x=>`<tr><td>${esc(x.a.name)}</td><td>${esc(x.a.parent)}</td><td>${esc(x.a.phone)}</td><td>${rupiah(x.d.amount)}</td><td><button class="btn btn-success btn-sm" onclick="whatsappFollowup('${esc(x.a.id)}')">WhatsApp</button></td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">Tidak ada tunggakan normal pada bulan ini 🎉</div>`;
     saveDB();
 }
 function renderAthletes(){
-    const q=(document.getElementById("athleteSearch")?.value||"").toLowerCase();
-    const filter=document.getElementById("athleteStatusFilter")?.value||"all";
+    const q=(document.getElementById("athleteSearch")?.value||"").toLowerCase(); const filter=document.getElementById("athleteStatusFilter")?.value||"all";
     const data=db.athletes.filter(a=>{
-        const match=!q || [a.nra,a.name,a.parent,a.phone].join(" ").toLowerCase().includes(q);
+        const match=!q || [a.nra,a.name,a.nik,a.parent,a.phone].join(" ").toLowerCase().includes(q);
         return match&&(filter==="all"||a.status===filter);
     });
     document.getElementById("athleteTable").innerHTML=data.length?data.map((a,i)=>`
         <tr>
-            <td>${i+1}</td><td>${a.nra ? esc(a.nra) : '<span class="badge badge-warning">Belum ada NRA</span>'}</td><td><b>${esc(a.name)}</b></td>
+            <td>${i+1}</td>
+            <td>${a.nra ? esc(a.nra) : '<span class="badge badge-warning">No NRA</span>'}<br><small style="color:#64748b">${esc(a.nik||"")}</small></td>
+            <td><b>${esc(a.name)}</b><br><small style="color:#64748b">${a.note&&a.note.includes('Coach') ? '🏀 Coach' : ''}</small></td>
             <td>${esc(a.parent)}</td><td>${esc(a.phone)}</td>
+            <td>${a.bpjs_exp ? `<span style="font-size:11px; font-weight:bold; color:#b4232f;">${fmtDate(a.bpjs_exp)}</span>` : '-'}</td>
             <td><span class="badge ${a.status==="Aktif"?"badge-success":"badge-gray"}">${esc(a.status)}</span></td>
             <td>
                 <button class="btn btn-secondary btn-sm" onclick="editAthlete('${esc(a.id)}')">Edit</button>
-                ${a.status==="Aktif"
-                    ? `<button class="btn btn-danger btn-sm" onclick="deactivateAthlete('${esc(a.id)}')">Atlet Keluar</button>`
-                    : `<button class="btn btn-success btn-sm" onclick="activateAthlete('${esc(a.id)}')">Aktifkan</button>`}
+                ${a.status==="Aktif" ? `<button class="btn btn-danger btn-sm" onclick="deactivateAthlete('${esc(a.id)}')">Keluar</button>` : `<button class="btn btn-success btn-sm" onclick="activateAthlete('${esc(a.id)}')">Aktifkan</button>`}
             </td>
-        </tr>`).join(""):`<tr><td colspan="7" class="empty">Belum ada data atlet.</td></tr>`;
+        </tr>`).join(""):`<tr><td colspan="8" class="empty">Belum ada data atlet.</td></tr>`;
 }
 function renderDues(){
-    const q=(document.getElementById("duesSearch")?.value||"").toLowerCase();
-    const active=getActiveAthletes();
+    const q=(document.getElementById("duesSearch")?.value||"").toLowerCase(); const active=getActiveAthletes();
     active.forEach(a=>ensureDuesForAthlete(a.id));
     const data=active.filter(a=>[a.nra,a.name,a.parent].join(" ").toLowerCase().includes(q));
     document.getElementById("duesTable").innerHTML=data.length?data.map((a,i)=>{
         const d=db.dues[currentMonth][a.id];
         return `<tr>
-            <td>${i+1}</td><td>${a.nra ? esc(a.nra) : '<span class="badge badge-warning">Belum ada NRA</span>'}</td><td><b>${esc(a.name)}</b></td><td>${rupiah(d.amount)}</td>
+            <td>${i+1}</td><td>${a.nra ? esc(a.nra) : '<span class="badge badge-warning">No NRA</span>'}</td><td><b>${esc(a.name)}</b></td><td>${rupiah(d.amount)}</td>
             <td><span class="badge ${d.paid==="Sudah Bayar"?"badge-success":"badge-danger"}">${esc(d.paid)}</span></td>
             <td><span class="badge ${d.breakdown==="Belum Bayar"?"badge-danger":"badge-info"}">${esc(d.breakdown)}</span></td>
             <td><span class="badge ${d.proof==="Sudah Dikirim"?"badge-success":"badge-warning"}">${esc(d.proof)}</span></td>
@@ -540,467 +457,280 @@ function renderDues(){
 function renderFollowup(){
     const q=(document.getElementById("followupSearch")?.value||"").toLowerCase();
     const data=getActiveAthletes().filter(a=>{
-        ensureDuesForAthlete(a.id);
-        const d=db.dues[currentMonth][a.id];
-        return d.paid==="Belum Bayar" && d.breakdown==="Belum Bayar" &&
-            [a.nra,a.name,a.parent,a.phone].join(" ").toLowerCase().includes(q);
+        ensureDuesForAthlete(a.id); const d=db.dues[currentMonth][a.id];
+        return d.paid==="Belum Bayar" && d.breakdown==="Belum Bayar" && [a.nra,a.name,a.parent,a.phone].join(" ").toLowerCase().includes(q);
     });
     document.getElementById("followupTable").innerHTML=data.length?data.map((a,i)=>{
         const d=db.dues[currentMonth][a.id];
-        return `<tr><td>${i+1}</td><td><b>${esc(a.name)}</b><br><small>${esc(a.nra)}</small></td>
-        <td>${esc(a.parent)}</td><td>${esc(a.phone)}</td><td>${rupiah(d.amount)}</td>
-        <td><span class="badge badge-danger">${esc(d.breakdown)}</span></td>
-        <td><button class="btn btn-success btn-sm" onclick="whatsappFollowup('${esc(a.id)}')">WhatsApp</button></td></tr>`;
+        return `<tr><td>${i+1}</td><td><b>${esc(a.name)}</b><br><small>${esc(a.nra)}</small></td><td>${esc(a.parent)}</td><td>${esc(a.phone)}</td><td>${rupiah(d.amount)}</td><td><span class="badge badge-danger">${esc(d.breakdown)}</span></td><td><button class="btn btn-success btn-sm" onclick="whatsappFollowup('${esc(a.id)}')">WhatsApp</button></td></tr>`;
     }).join(""):`<tr><td colspan="7" class="empty">Tidak ada atlet yang perlu di-follow up.</td></tr>`;
 }
+
 function openAthleteModal(id=null){
     document.getElementById("athleteModal").classList.add("show");
-    document.getElementById("athleteModalTitle").textContent=id?"Edit Atlet":"Tambah Atlet";
+    document.getElementById("athleteModalTitle").textContent=id?"Edit Data":"Tambah Data";
     document.getElementById("editAthleteIndex").value=id||"";
     const a=id?db.athletes.find(x=>x.id===id):{};
-    document.getElementById("fNra").value=a.nra||"";
-    document.getElementById("fName").value=a.name||"";
-    
-    // BACA NIK & DOB YANG BARU DITAMBAHKAN
-    document.getElementById("fNik").value=a.nik||"";
-    document.getElementById("fDob").value=a.dob||"";
-    
-    document.getElementById("fParent").value=a.parent||"";
-    document.getElementById("fPhone").value=a.phone||"";
-    document.getElementById("fStatus").value=a.status||"Aktif";
-    document.getElementById("fJoinDate").value=a.joinDate||"";
+    document.getElementById("fNra").value=a.nra||""; document.getElementById("fName").value=a.name||"";
+    document.getElementById("fNik").value=a.nik||""; document.getElementById("fDob").value=a.dob||"";
+    document.getElementById("fBpjsExp").value=a.bpjs_exp||""; document.getElementById("fParent").value=a.parent||"";
+    document.getElementById("fPhone").value=a.phone||""; document.getElementById("fStatus").value=a.status||"Aktif";
     document.getElementById("fNote").value=a.note||"";
 }
 function saveAthlete(){
     const id=document.getElementById("editAthleteIndex").value;
     const obj={
-        id:id||("A"+Date.now()),
-        nra:document.getElementById("fNra").value.trim(),
-        name:document.getElementById("fName").value.trim(),
-        
-        // SIMPAN NIK & DOB
-        nik:document.getElementById("fNik").value.trim(),
-        dob:document.getElementById("fDob").value,
-        
-        parent:document.getElementById("fParent").value.trim(),
-        phone:document.getElementById("fPhone").value.trim(),
-        status:document.getElementById("fStatus").value,
-        joinDate:document.getElementById("fJoinDate").value,
-        note:document.getElementById("fNote").value.trim()
+        id:id||("A"+Date.now()), nra:document.getElementById("fNra").value.trim(), name:document.getElementById("fName").value.trim(),
+        nik:document.getElementById("fNik").value.trim(), dob:document.getElementById("fDob").value, bpjs_exp:document.getElementById("fBpjsExp").value,
+        parent:document.getElementById("fParent").value.trim(), phone:document.getElementById("fPhone").value.trim(),
+        status:document.getElementById("fStatus").value, note:document.getElementById("fNote").value.trim()
     };
-    if(!obj.name){alert("Nama atlet wajib diisi.");return;}
-    if(id){
-        const idx=db.athletes.findIndex(a=>a.id===id);
-        db.athletes[idx]=obj;
-    }else db.athletes.push(obj);
+    if(!obj.name){alert("Nama wajib diisi.");return;}
+    if(id){ const idx=db.athletes.findIndex(a=>a.id===id); db.athletes[idx]=obj; }else db.athletes.push(obj);
     saveDB();closeModal("athleteModal");renderAll();
 }
 function editAthlete(id){openAthleteModal(id)}
-function deactivateAthlete(id){
-    if(confirm("Yakin atlet ini ditandai sebagai keluar? Data iuran dan histori tetap disimpan.")){
-        const a=db.athletes.find(x=>x.id===id);if(a)a.status="Tidak Aktif";
-        saveDB();renderAll();
-    }
-}
-function activateAthlete(id){
-    const a=db.athletes.find(x=>x.id===id);if(a)a.status="Aktif";
-    saveDB();renderAll();
-}
+function deactivateAthlete(id){ if(confirm("Yakin data ini ditandai keluar?")) { const a=db.athletes.find(x=>x.id===id); if(a)a.status="Tidak Aktif"; saveDB();renderAll(); } }
+function activateAthlete(id){ const a=db.athletes.find(x=>x.id===id); if(a)a.status="Aktif"; saveDB();renderAll(); }
+
 function editDues(id){
-    ensureDuesForAthlete(id);
-    const d=db.dues[currentMonth][id], a=db.athletes.find(x=>x.id===id);
-    document.getElementById("editDuesKey").value=id;
-    document.getElementById("dAthlete").value=`${a.name} (${a.nra})`;
-    document.getElementById("dAmount").value=d.amount;
-    document.getElementById("dPaid").value=d.paid;
-    document.getElementById("dBreakdown").value=d.breakdown;
-    document.getElementById("dProof").value=d.proof;
-    document.getElementById("dPaidDate").value=d.paidDate||"";
-    document.getElementById("dMethod").value=d.method||"Transfer";
-    document.getElementById("dNote").value=d.note||"";
-    document.getElementById("duesModal").classList.add("show");
+    ensureDuesForAthlete(id); const d=db.dues[currentMonth][id], a=db.athletes.find(x=>x.id===id);
+    document.getElementById("editDuesKey").value=id; document.getElementById("dAthlete").value=`${a.name} (${a.nra})`;
+    document.getElementById("dAmount").value=d.amount; document.getElementById("dPaid").value=d.paid;
+    document.getElementById("dBreakdown").value=d.breakdown; document.getElementById("dProof").value=d.proof;
+    document.getElementById("dPaidDate").value=d.paidDate||""; document.getElementById("dMethod").value=d.method||"Transfer";
+    document.getElementById("dNote").value=d.note||""; document.getElementById("duesModal").classList.add("show");
 }
 function saveDues(){
-    const id=document.getElementById("editDuesKey").value;
-    ensureDuesForAthlete(id);
+    const id=document.getElementById("editDuesKey").value; ensureDuesForAthlete(id);
     db.dues[currentMonth][id]={
-        amount:Number(document.getElementById("dAmount").value)||0,
-        paid:document.getElementById("dPaid").value,
-        breakdown:document.getElementById("dBreakdown").value,
-        proof:document.getElementById("dProof").value,
-        paidDate:document.getElementById("dPaidDate").value,
-        method:document.getElementById("dMethod").value,
-        note:document.getElementById("dNote").value.trim(),
-        receiptNo:(db.dues[currentMonth][id]||{}).receiptNo||""
+        amount:Number(document.getElementById("dAmount").value)||0, paid:document.getElementById("dPaid").value,
+        breakdown:document.getElementById("dBreakdown").value, proof:document.getElementById("dProof").value,
+        paidDate:document.getElementById("dPaidDate").value, method:document.getElementById("dMethod").value,
+        note:document.getElementById("dNote").value.trim(), receiptNo:(db.dues[currentMonth][id]||{}).receiptNo||""
     };
-    if(db.dues[currentMonth][id].paid==="Sudah Bayar" && !db.dues[currentMonth][id].paidDate){
-        db.dues[currentMonth][id].paidDate=new Date().toISOString().slice(0,10);
-    }
+    if(db.dues[currentMonth][id].paid==="Sudah Bayar" && !db.dues[currentMonth][id].paidDate){ db.dues[currentMonth][id].paidDate=new Date().toISOString().slice(0,10); }
     saveDB();closeModal("duesModal");renderAll();
 }
 function closeModal(id){document.getElementById(id).classList.remove("show")}
 function whatsappFollowup(id){
-    const a=db.athletes.find(x=>x.id===id);if(!a)return;
-    ensureDuesForAthlete(id);
-    const d=db.dues[currentMonth][id];
-    let phone=(a.phone||"").replace(/\D/g,"");
-    if(phone.startsWith("0"))phone="62"+phone.substring(1);
-    const msg=`Halo Kak/Bunda, izin mengingatkan untuk iuran bulanan atlet ${a.name} periode ${monthLabel(currentMonth)} sebesar ${rupiah(d.amount)}. Apabila sudah melakukan pembayaran, mohon mengirimkan bukti pembayaran. Terima kasih 🙏`;
+    const a=db.athletes.find(x=>x.id===id);if(!a)return; ensureDuesForAthlete(id); const d=db.dues[currentMonth][id];
+    let phone=(a.phone||"").replace(/\D/g,""); if(phone.startsWith("0"))phone="62"+phone.substring(1);
     if(!phone){alert("Nomor HP orang tua belum tersedia.");return;}
-    window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(msg),"_blank");
+    window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(`Halo Kak/Bunda, izin mengingatkan untuk iuran bulanan atlet ${a.name} periode ${monthLabel(currentMonth)} sebesar ${rupiah(d.amount)}. Apabila sudah melakukan pembayaran, mohon mengirimkan bukti pembayaran. Terima kasih 🙏`),"_blank");
 }
 
-
-/* KWITANSI OTOMATIS */
+/* KWITANSI */
 function nextReceiptNo(){
-    let max=0;
-    Object.values(db.dues||{}).forEach(month=>Object.values(month||{}).forEach(d=>{
-        const m=String(d.receiptNo||"").match(/(\d+)$/);
-        if(m)max=Math.max(max,parseInt(m[1],10));
-    }));
+    let max=0; Object.values(db.dues||{}).forEach(month=>Object.values(month||{}).forEach(d=>{ const m=String(d.receiptNo||"").match(/(\d+)$/); if(m)max=Math.max(max,parseInt(m[1],10)); }));
     return "NGR-"+String(max+1).padStart(4,"0");
 }
-function terbilang(n){
-    n=Math.floor(Math.abs(Number(n)||0));
-    const a=["","satu","dua","tiga","empat","lima","enam","tujuh","delapan","sembilan","sepuluh","sebelas"];
-    function t(x){
-        if(x<12)return a[x];
-        if(x<20)return t(x-10)+" belas";
-        if(x<100)return t(Math.floor(x/10))+" puluh"+(x%10?" "+t(x%10):"");
-        if(x<200)return "seratus"+(x-100?" "+t(x-100):"");
-        if(x<1000)return t(Math.floor(x/100))+" ratus"+(x%100?" "+t(x%100):"");
-        if(x<2000)return "seribu"+(x-1000?" "+t(x-1000):"");
-        if(x<1000000)return t(Math.floor(x/1000))+" ribu"+(x%1000?" "+t(x%1000):"");
-        if(x<1000000000)return t(Math.floor(x/1000000))+" juta"+(x%1000000?" "+t(x%1000000):"");
-        if(x<1000000000000)return t(Math.floor(x/1000000000))+" miliar"+(x%1000000000?" "+t(x%1000000000):"");
-        return String(x);
-    }
-    return (t(n)||"nol").replace(/\s+/g," ").trim()+" rupiah";
-}
-function fmtDate(v){
-    if(!v)return "";
-    const p=String(v).split("-");
-    if(p.length===3)return `${p[2]}-${p[1]}-${p[0]}`;
-    return v;
-}
 function ensureReceiptNo(id){
-    ensureDuesForAthlete(id);
-    const d=db.dues[currentMonth][id];
-    if(!d.receiptNo)d.receiptNo=nextReceiptNo();
-    if(!d.paidDate)d.paidDate=new Date().toISOString().slice(0,10);
-    if(!d.method)d.method="Transfer";
-    saveDB();
-    return d;
+    ensureDuesForAthlete(id); const d=db.dues[currentMonth][id];
+    if(!d.receiptNo)d.receiptNo=nextReceiptNo(); if(!d.paidDate)d.paidDate=new Date().toISOString().slice(0,10);
+    if(!d.method)d.method="Transfer"; saveDB(); return d;
 }
 function generateReceipt(id){
-    const a=db.athletes.find(x=>x.id===id); if(!a)return;
-    const d=ensureReceiptNo(id);
-    if(d.paid!=="Sudah Bayar"){alert("Kwitansi hanya dapat dibuat untuk pembayaran yang berstatus Sudah Bayar.");return;}
-    const choice=confirm("Klik OK untuk PDF. Klik Cancel untuk JPEG.");
-    if(choice) downloadReceiptPDF(a,d);
-    else downloadReceiptJPEG(a,d);
+    const a=db.athletes.find(x=>x.id===id); if(!a)return; const d=ensureReceiptNo(id);
+    if(d.paid!=="Sudah Bayar"){alert("Kwitansi hanya dibuat untuk pembayaran lunas.");return;}
+    if(confirm("Klik OK untuk PDF. Klik Cancel untuk JPEG.")) {
+        if(!window.jspdf){alert("Tunggu sebentar, library PDF sedang dimuat.");return;}
+        const c=document.createElement("canvas"); c.width=1400;c.height=900; const x=c.getContext("2d");
+        x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height); x.strokeStyle="#222";x.lineWidth=3;x.strokeRect(35,35,c.width-70,c.height-70);
+        x.fillStyle="#0f6fae";x.font="bold 42px Arial";x.textAlign="center"; x.fillText("NAGARAJA BASKETBALL",700,105);
+        x.fillStyle="#222";x.font="bold 30px Arial";x.fillText("KWITANSI PEMBAYARAN",700,155);
+        x.font="20px Arial";x.fillText("MONTHLY FEE CLUB NAGARAJA BASKETBALL",700,190);
+        x.textAlign="left";x.font="24px Arial";
+        let y=270; [["No. Kwitansi",d.receiptNo],["Tanggal Pembayaran",fmtDate(d.paidDate)],["Nama Atlet",a.name],["Nama Orang Tua / Wali",a.parent||"-"],["Periode / Bulan",monthLabel(currentMonth)],["Metode Pembayaran",d.method||"Transfer"]].forEach(([lab,val])=>{x.font="bold 22px Arial";x.fillText(lab,100,y);x.font="22px Arial";x.fillText(":  "+String(val||"-"),390,y);y+=58;});
+        x.strokeStyle="#888";x.lineWidth=1;x.strokeRect(95,625,1210,105);
+        x.font="bold 20px Arial";x.fillText("TELAH DITERIMA PEMBAYARAN SEBESAR",125,660); x.font="bold 34px Arial";x.fillText(rupiah(d.amount),125,705);
+        if(d.note){x.font="18px Arial";x.fillText("Keterangan: "+d.note,100,820);} x.textAlign="right";x.font="18px Arial";x.fillText("Terima kasih atas pembayaran Anda.",1300,850);
+        
+        const pdf=new window.jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a5"});
+        pdf.addImage(c.toDataURL("image/jpeg",0.82),"JPEG",8,8,132,89); pdf.save(`Kwitansi_${d.receiptNo}_${a.name.replace(/[^a-z0-9]+/gi,"_")}.pdf`);
+    } else { alert("Silakan gunakan opsi PDF untuk mencetak kwitansi."); }
     renderAll();
 }
-function receiptCanvas(a,d){
-    const c=document.createElement("canvas"); c.width=1400;c.height=900;
-    const x=c.getContext("2d");
-    x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);
-    x.strokeStyle="#222";x.lineWidth=3;x.strokeRect(35,35,c.width-70,c.height-70);
-    x.fillStyle="#0f6fae";x.font="bold 42px Arial";x.textAlign="center";
-    x.fillText("NAGARAJA BASKETBALL",700,105);
-    x.fillStyle="#222";x.font="bold 30px Arial";x.fillText("KWITANSI PEMBAYARAN",700,155);
-    x.font="20px Arial";x.fillText("MONTHLY FEE CLUB NAGARAJA BASKETBALL",700,190);
-    x.textAlign="left";x.font="24px Arial";
-    const lines=[
-        ["No. Kwitansi",d.receiptNo],
-        ["Tanggal Pembayaran",fmtDate(d.paidDate)],
-        ["Nama Atlet",a.name],
-        ["Nama Orang Tua / Wali",a.parent||"-"],
-        ["Periode / Bulan",monthLabel(currentMonth)],
-        ["Metode Pembayaran",d.method||"Transfer"]
-    ];
-    let y=270;
-    lines.forEach(([lab,val])=>{x.font="bold 22px Arial";x.fillText(lab,100,y);x.font="22px Arial";x.fillText(":  "+String(val||"-"),390,y);y+=58;});
-    x.strokeStyle="#888";x.lineWidth=1;x.strokeRect(95,625,1210,105);
-    x.font="bold 20px Arial";x.fillText("TELAH DITERIMA PEMBAYARAN SEBESAR",125,660);
-    x.font="bold 34px Arial";x.fillText(rupiah(d.amount),125,705);
-    x.font="italic 19px Arial";x.fillText("Terbilang: "+terbilang(d.amount),100,775);
-    if(d.note){x.font="18px Arial";x.fillText("Keterangan: "+d.note,100,820);}
-    x.textAlign="right";x.font="18px Arial";x.fillText("Terima kasih atas pembayaran Anda.",1300,850);
-    return c;
-}
-function downloadReceiptJPEG(a,d){
-    const c=receiptCanvas(a,d);
-    const link=document.createElement("a");
-    link.download=`Kwitansi_${d.receiptNo}_${a.name.replace(/[^a-z0-9]+/gi,"_")}.jpg`;
-    link.href=c.toDataURL("image/jpeg",0.82);link.click();
-}
-function downloadReceiptPDF(a,d){
-    if(!window.jspdf){alert("Library PDF belum termuat. Pastikan komputer terhubung internet saat membuka aplikasi pertama kali.");return;}
-    const {jsPDF}=window.jspdf;
-    const c=receiptCanvas(a,d);
-    const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:"a5"});
-    const img=c.toDataURL("image/jpeg",0.82);
-    pdf.addImage(img,"JPEG",8,8,132,89);
-    pdf.save(`Kwitansi_${d.receiptNo}_${a.name.replace(/[^a-z0-9]+/gi,"_")}.pdf`);
-}
 function renderReceipts(){
-    const q=(document.getElementById("receiptSearch")?.value||"").toLowerCase();
-    const rows=[];
+    const q=(document.getElementById("receiptSearch")?.value||"").toLowerCase(); const rows=[];
     Object.entries(db.dues||{}).forEach(([mk,month])=>Object.entries(month||{}).forEach(([id,d])=>{
-        if(d.paid!=="Sudah Bayar")return;
-        const a=db.athletes.find(x=>x.id===id);if(!a)return;
-        const hay=[a.name,a.nra,d.receiptNo,monthLabel(mk)].join(" ").toLowerCase();
-        if(!q||hay.includes(q))rows.push({mk,a,d});
+        if(d.paid!=="Sudah Bayar")return; const a=db.athletes.find(x=>x.id===id);if(!a)return;
+        if(!q||[a.name,a.nra,d.receiptNo,monthLabel(mk)].join(" ").toLowerCase().includes(q))rows.push({mk,a,d});
     }));
     rows.sort((x,y)=>String(y.d.paidDate||"").localeCompare(String(x.d.paidDate||"")));
-    const tb=document.getElementById("receiptTable");
-    if(!tb)return;
-    tb.innerHTML=rows.length?rows.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.d.receiptNo||"Belum dibuat")}</b></td><td>${esc(x.a.name)}</td><td>${esc(monthLabel(x.mk))}</td><td>${esc(fmtDate(x.d.paidDate)||"-")}</td><td>${rupiah(x.d.amount)}</td><td><button class="btn btn-primary btn-sm" onclick="currentMonth='${x.mk}';document.getElementById('globalMonth').value=currentMonth;localStorage.setItem('nagarajaMonth',currentMonth);generateReceipt('${esc(x.a.id)}')">🧾 Generate</button></td></tr>`).join(""):`<tr><td colspan="7" class="empty">Belum ada pembayaran yang berstatus Sudah Bayar.</td></tr>`;
+    const tb=document.getElementById("receiptTable"); if(!tb)return;
+    tb.innerHTML=rows.length?rows.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.d.receiptNo||"Belum dibuat")}</b></td><td>${esc(x.a.name)}</td><td>${esc(monthLabel(x.mk))}</td><td>${esc(fmtDate(x.d.paidDate)||"-")}</td><td>${rupiah(x.d.amount)}</td><td><button class="btn btn-primary btn-sm" onclick="currentMonth='${x.mk}';document.getElementById('globalMonth').value=currentMonth;localStorage.setItem('nagarajaMonth',currentMonth);generateReceipt('${esc(x.a.id)}')">🧾 Generate</button></td></tr>`).join(""):`<tr><td colspan="7" class="empty">Belum ada data.</td></tr>`;
 }
 
-/* IMPORT EXCEL */
-const MONTH_MAP = [
-    {key:"2026-01", aliases:["jan","januari"]}, {key:"2026-02", aliases:["feb","februari"]},
-    {key:"2026-03", aliases:["mar","maret"]}, {key:"2026-04", aliases:["apr","april"]},
-    {key:"2026-05", aliases:["may","mei","may"]}, {key:"2026-06", aliases:["jun","juni"]},
-    {key:"2026-07", aliases:["jul","juli"]}, {key:"2026-08", aliases:["aug","agu","agustus"]},
-    {key:"2026-09", aliases:["sep","sept","september"]}, {key:"2026-10", aliases:["oct","okt","october","oktober"]},
-    {key:"2026-11", aliases:["nov","november"]}, {key:"2026-12", aliases:["dec","des","december","desember"]}
-];
-
-function normalize(v){ return String(v ?? "").trim().toLowerCase().replace(/[._\-\s]+/g,""); }
-function cleanNra(v){
-    const s=String(v ?? "").trim();
-    const stripped=s.toLowerCase().replace(/[\s\-_:]/g,"");
-    if(!s || stripped==="nra") return "";
-    return s;
-}
-function normalizeStatus(v){
-    const s=String(v ?? "").trim().toLowerCase();
-    if(s.includes("sudah")) return "Sudah Bayar";
-    if(s.includes("belom") || s.includes("belum")) return "Belum Bayar";
-    return "";
-}
-function normalizeBreakdown(v){
-    const s=String(v ?? "").trim().toLowerCase();
-    if(!s) return "";
-    const map=[
-        ["sudah","Sudah Bayar"],["belom","Belum Bayar"],["belum","Belum Bayar"],
-        ["cuti","Cuti"],["atletbaru","Atlet Baru"],["akanjoin","Akan Join"],
-        ["pemutihan","Pemutihan"],["kompensasi","Kompensasi"]
-    ];
-    for(const [needle,label] of map) if(s.replace(/\s+/g,"").includes(needle)) return label;
-    return BREAKDOWNS.find(x=>x.toLowerCase()===s) || "";
-}
-function normalizeProof(v){
-    const s=String(v ?? "").trim().toLowerCase();
-    if(!s) return "";
-    return s.includes("sudah") ? "Sudah Dikirim" : "Belum Dikirim";
-}
-function amountNumber(v){
-    if(v===null || v===undefined || v==="") return null;
-    if(typeof v==="number") return v;
-    const s=String(v).replace(/[^\d,.-]/g,"").replace(/\./g,"").replace(",",".");
-    const n=Number(s);
-    return Number.isFinite(n) ? n : null;
-}
-function isMonthHeader(header, month){
-    const n=normalize(header);
-    return month.aliases.some(alias=>n===normalize(alias));
-}
-function findMonthColumns(headers){
-    const result={};
-    MONTH_MAP.forEach(month=>{
-        const idx=headers.findIndex(h=>isMonthHeader(h,month));
-        if(idx<0) return;
-        result[month.key]={
-            amount:idx,
-            status: idx+1 < headers.length && normalize(headers[idx+1]).includes("statusbayar") ? idx+1 : null,
-            breakdown: idx+2 < headers.length && normalize(headers[idx+2]).includes("breakdown") ? idx+2 : null,
-            proof: idx+3 < headers.length && normalize(headers[idx+3]).includes("kirimbuktibayar") ? idx+3 : null
-        };
-    });
-    return result;
-}
-function findHeaderIndex(headers, aliases){
-    return headers.findIndex(h=>{
-        const n=normalize(h);
-        return aliases.some(a=>n===normalize(a) || n.includes(normalize(a)));
-    });
-}
-function makeAthleteId(){
-    return "A" + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
-}
+/* IMPORT IURAN (EXCEL RUTIN) */
+function cleanNra(v){ const s=String(v ?? "").trim().toLowerCase().replace(/[\s\-_:]/g,""); return (!s || s==="nra") ? "" : String(v ?? "").trim(); }
 function findExistingAthlete(nra,name){
     const clean=cleanNra(nra);
-    if(clean){
-        const byNra=db.athletes.find(a=>cleanNra(a.nra)===clean);
-        if(byNra) return byNra;
-    }
+    if(clean) { const byNra=db.athletes.find(a=>cleanNra(a.nra)===clean); if(byNra) return byNra; }
     return db.athletes.find(a=>!cleanNra(a.nra) && String(a.name||"").trim().toLowerCase()===String(name||"").trim().toLowerCase());
 }
 function handleExcel(e){
-    const file=e.target.files[0];
-    if(!file)return;
+    const file=e.target.files[0]; if(!file)return;
     document.getElementById("importFileName").textContent="File dipilih: "+file.name;
-
     const reader=new FileReader();
     reader.onload=function(evt){
         try{
-            if(typeof XLSX==="undefined"){ throw new Error("Library Excel belum termuat. Buka file saat perangkat terhubung internet, lalu coba lagi."); }
-            const wb=XLSX.read(evt.target.result,{type:"array"});
-            const ws=wb.Sheets[wb.SheetNames[0]];
+            if(typeof XLSX==="undefined") throw new Error("Library Excel belum termuat.");
+            const wb=XLSX.read(evt.target.result,{type:"array"}); const ws=wb.Sheets[wb.SheetNames[0]];
             const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:true});
-
-            if(raw.length<2) throw new Error("Sheet Excel kosong.");
+            if(raw.length<2) throw new Error("Sheet kosong.");
             const headers=raw[0].map(v=>String(v??"").trim());
-            const monthCols=findMonthColumns(headers);
-
-            const cNo=findHeaderIndex(headers,["NO"]);
-            const cNra=findHeaderIndex(headers,["NRA"]);
-            const cName=findHeaderIndex(headers,["NAMA"]);
-            const cParent=findHeaderIndex(headers,["ORANG TUA","ORANGTUA"]);
-            const cPhone=findHeaderIndex(headers,["NO. TELP ORTU","NO TELP ORTU","NO TELP","TELEPON"]);
-
+            const cName=headers.findIndex(h=>h.toLowerCase().includes("nama"));
             if(cName<0) throw new Error("Kolom NAMA tidak ditemukan.");
-
-            let added=0,updated=0,ignored=0,monthImported=0;
-
+            
+            let added=0;
             for(let r=1;r<raw.length;r++){
-                const row=raw[r];
-                const name=String(row[cName]??"").trim();
-                const nra=cleanNra(row[cNra]);
-
-                if(!name || name.toLowerCase().includes("jumlah pemasukan")){ ignored++; continue; }
-
-                let a=findExistingAthlete(nra,name);
+                const row=raw[r]; const name=String(row[cName]??"").trim();
+                if(!name || name.toLowerCase().includes("jumlah pemasukan")) continue;
+                let a=findExistingAthlete("",name);
                 if(!a){
-                    a={
-                        id:makeAthleteId(), nra:nra, name:name,
-                        parent:cParent>=0?String(row[cParent]??"").trim():"",
-                        phone:cPhone>=0?String(row[cPhone]??"").trim():"",
-                        status:"Aktif", joinDate:"", note:nra ? "" : "NRA belum tersedia"
-                    };
-                    db.athletes.push(a);
-                    added++;
-                }else{
-                    if(nra) a.nra=nra;
-                    if(cParent>=0 && String(row[cParent]??"").trim()) a.parent=String(row[cParent]).trim();
-                    if(cPhone>=0 && String(row[cPhone]??"").trim()) a.phone=String(row[cPhone]).trim();
-                    updated++;
+                    a={ id:"A"+Date.now()+r, nra:"", name:name, status:"Aktif", note:"Dari Iuran" };
+                    db.athletes.push(a); added++;
                 }
-
-                Object.entries(monthCols).forEach(([monthKey,col])=>{
-                    const amount=amountNumber(row[col.amount]);
-                    const paid=col.status!==null ? normalizeStatus(row[col.status]) : "";
-                    const breakdown=col.breakdown!==null ? normalizeBreakdown(row[col.breakdown]) : "";
-                    const proof=col.proof!==null ? normalizeProof(row[col.proof]) : "";
-
-                    if(amount===null && !paid && !breakdown && !proof) return;
-
-                    if(!db.dues[monthKey]) db.dues[monthKey]={};
-                    const old=db.dues[monthKey][a.id] || { amount:350000, paid:"Belum Bayar", breakdown:"Belum Bayar", proof:"Belum Dikirim" };
-
-                    if(amount!==null) old.amount=amount;
-                    else if(!old.amount) old.amount=350000;
-                    if(paid) old.paid=paid;
-                    if(breakdown) old.breakdown=breakdown;
-                    if(proof) old.proof=proof;
-                    if(!paid && breakdown==="Sudah Bayar") old.paid="Sudah Bayar";
-                    if(!proof) old.proof=old.proof||"Belum Dikirim";
-
-                    db.dues[monthKey][a.id]=old;
-                    monthImported++;
-                });
             }
             saveDB(); renderAll();
-            const missingNra=db.athletes.filter(a=>!cleanNra(a.nra)).length;
-            const monthNames=Object.keys(monthCols).map(k=>monthLabel(k)).join(", ");
+            document.getElementById("importResult").innerHTML=`<div class="notice"><b>✅ Berhasil membaca atlet baru: ${added}</b></div>`;
+        }catch(err){ document.getElementById("importResult").innerHTML=`<div style="color:#9d1c2a;"><b>Gagal:</b> ${esc(err.message)}</div>`; }
+    };
+    reader.readAsArrayBuffer(file);
+}
 
-            document.getElementById("importResult").innerHTML=`
+/* FUNGSI BARU: IMPORT MASTER BPJS TK (Membaca semua sheet termasuk Coach) */
+function handleMasterBPJS(e) {
+    const file = e.target.files[0]; if(!file) return;
+    document.getElementById("bpjsFileName").textContent = "File BPJS terpilih: " + file.name;
+    
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        try {
+            if(typeof XLSX === "undefined") throw new Error("Tunggu sebentar, library Excel sedang dimuat browser.");
+            // cellDates:true mengkonversi tanggal excel langsung menjadi object Date JS
+            const wb = XLSX.read(evt.target.result, {type:"array", cellDates:true});
+            
+            let updatedCount = 0; let addedCount = 0;
+            
+            // Periksa setiap sheet (Master Data, Data Coach, dll)
+            wb.SheetNames.forEach(sheetName => {
+                const ws = wb.Sheets[sheetName];
+                const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
+                
+                // Cari baris yang menjadi Header (mengandung NAMA dan NOMOR IDENTITAS)
+                let headerIdx = -1;
+                for(let i=0; i<Math.min(raw.length, 10); i++) {
+                    const rowText = raw[i].join(" ").toLowerCase();
+                    if(rowText.includes("nama") && (rowText.includes("nomor identitas") || rowText.includes("nik"))) {
+                        headerIdx = i; break;
+                    }
+                }
+                
+                if(headerIdx >= 0) {
+                    const headers = raw[headerIdx].map(x => String(x).trim().toLowerCase());
+                    const cName = headers.findIndex(x => x.includes("nama") && !x.includes("ibu") && !x.includes("rekening"));
+                    const cNik = headers.findIndex(x => x.includes("nomor identitas") || x.includes("nik"));
+                    const cExp = headers.findIndex(x => x.includes("jatoh tempo") || x.includes("jatuh tempo") || x.includes("jatoh"));
+                    const cPhone = headers.findIndex(x => x === "hp" || x.includes("telepon"));
+                    
+                    if(cName >= 0 && cNik >= 0) {
+                        for(let r = headerIdx + 1; r < raw.length; r++) {
+                            const row = raw[r];
+                            const name = String(row[cName] || "").trim();
+                            if(!name || name.toLowerCase().includes("nama")) continue; // Abaikan baris kosong
+                            
+                            // Ekstrak NIK (hanya ambil angka)
+                            let nik = String(row[cNik] || "").replace(/\D/g, "");
+                            
+                            // Ekstrak Jatuh Tempo BPJS
+                            let expDate = "";
+                            if(cExp >= 0 && row[cExp]) {
+                                let val = row[cExp];
+                                if (val instanceof Date) {
+                                    // Ambil tanggal dalam UTC agar tidak mundur 1 hari
+                                    expDate = val.getUTCFullYear() + "-" + String(val.getUTCMonth()+1).padStart(2,'0') + "-" + String(val.getUTCDate()).padStart(2,'0');
+                                } else {
+                                    const parts = String(val).split(/[-/]/);
+                                    if(parts.length === 3) {
+                                        expDate = parts[2].length === 4 ? `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}` : `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+                                    }
+                                }
+                            }
+                            
+                            // Cari atlet atau coach di database kita
+                            let a = findExistingAthlete("", name);
+                            const isCoachSheet = sheetName.toLowerCase().includes("coach");
+                            
+                            if(a) {
+                                // Jika sudah ada, update datanya
+                                if(nik) a.nik = nik;
+                                if(expDate) a.bpjs_exp = expDate;
+                                if(isCoachSheet && !a.note.includes("Coach")) a.note = (a.note + " (Coach)").trim();
+                                updatedCount++;
+                            } else {
+                                // Jika tidak ada, tambahkan sebagai data baru
+                                a = {
+                                    id: "A" + Date.now() + r, nra: "", name: name,
+                                    nik: nik, bpjs_exp: expDate,
+                                    phone: cPhone >= 0 ? String(row[cPhone]||"").trim() : "",
+                                    status: "Aktif",
+                                    note: isCoachSheet ? "Coach" : "Hasil Import BPJSTK"
+                                };
+                                db.athletes.push(a);
+                                addedCount++;
+                            }
+                        }
+                    }
+                }
+            });
+            
+            saveDB(); renderAll();
+            document.getElementById("bpjsResult").innerHTML = `
                 <div class="notice">
-                    <b>✅ Import berhasil.</b><br><br>
-                    Atlet baru: <b>${added}</b> | Data atlet diperbarui: <b>${updated}</b><br>
-                    Data pembayaran yang terbaca: <b>${monthImported}</b><br>
-                    Total atlet dalam aplikasi: <b>${db.athletes.length}</b><br><br>
-                    Bulan yang terbaca: ${esc(monthNames || "Tidak ada")}
+                    <b>✅ Sinkronisasi Master BPJS Berhasil!</b><br><br>
+                    Data NIK & Tanggal Jatuh Tempo diperbarui: <b>${updatedCount} Orang</b><br>
+                    Data Nama Baru (termasuk Coach) ditambahkan: <b>${addedCount} Orang</b>
                 </div>`;
-        }catch(err){
-            document.getElementById("importResult").innerHTML=`<div style="padding:12px;background:#fdebec;color:#9d1c2a;border-radius:8px;font-size:12px"><b>Import gagal:</b> ${esc(err.message)}</div>`;
+                
+        } catch(err) {
+            document.getElementById("bpjsResult").innerHTML = `<div style="padding:12px;background:#fdebec;color:#9d1c2a;border-radius:8px;font-size:12px"><b>Gagal memproses file:</b> ${esc(err.message)}</div>`;
         }
     };
     reader.readAsArrayBuffer(file);
 }
 
-/* FUNGSI BARU: EXPORT BPJS */
+/* EXPORT BPJS */
 function exportBPJS(type){
-    if (typeof XLSX === "undefined") {
-        alert("Library Excel belum termuat. Pastikan komputer terhubung ke internet.");
-        return;
-    }
+    if (typeof XLSX === "undefined") { alert("Library Excel belum termuat."); return; }
+    const active = getActiveAthletes(); let dataToExport = [];
     
-    const active = getActiveAthletes();
-    let dataToExport = [];
-    
-    // Saring atlet berdasarkan status pembayaran dan breakdown
     active.forEach(a => {
         ensureDuesForAthlete(a.id);
         const d = db.dues[currentMonth][a.id];
         if (d && d.paid === "Sudah Bayar") {
-            if (type === "baru" && d.breakdown === "Atlet Baru") {
-                dataToExport.push(a);
-            } else if (type === "perpanjang" && d.breakdown !== "Atlet Baru") {
-                dataToExport.push(a);
-            }
+            if (type === "baru" && d.breakdown === "Atlet Baru") dataToExport.push(a);
+            else if (type === "perpanjang" && d.breakdown !== "Atlet Baru") dataToExport.push(a);
         }
     });
 
-    if (dataToExport.length === 0) {
-        alert(`Tidak ada data atlet yang sudah bayar dengan kategori ${type === 'baru' ? 'Atlet Baru' : 'Perpanjangan'} pada bulan ini.`);
-        return;
-    }
+    if (dataToExport.length === 0) { alert(`Tidak ada yang lunas dengan kategori ${type === 'baru' ? 'Atlet Baru' : 'Perpanjangan'} bulan ini.`); return; }
 
-    const wb = XLSX.utils.book_new();
-    let wsData = [];
-    let fileName = "";
-
-    // Fungsi format tanggal lahir YYYY-MM-DD -> DD-MM-YYYY untuk BPJS
-    function formatDob(d) {
-        if (!d) return "";
-        const p = d.split("-");
-        if (p.length === 3) return `${p[2]}-${p[1]}-${p[0]}`;
-        return d;
-    }
-
+    const wb = XLSX.utils.book_new(); let wsData = [];
     if (type === "baru") {
-        fileName = `PENDAFTARAN_BPJS_TK_BARU_${monthLabel(currentMonth).toUpperCase().replace(/\s/g, "_")}.xlsx`;
-        
-        // Header mengikuti template BPJSTK Baru
         wsData.push(["", "", "Format: DD-MM-YYYY", "FORMAT: Diawali '08'", "", "List Jenis Pekerjaan", "List Jenis Pekerjaan.1", "List Lokasi Pekerjaan", "", "List Kode Paket", "List Bulan Iuran", "List Kode bank", "", "", "", ""]);
         wsData.push(["Nomor Identitas*", "Nama Lengkap*", "Tgl. Lahir*", "Handphone*", "Email", "Jenis Pekerjaan 1*", "Jenis Pekerjaan 2", "Lokasi Pekerjaan*", "Upah*", "Kode Paket*", "Bulan Iuran*", "Kode Bank", "Nama Bank", "No Rekening", "Nama Rekening", "Nama Ibu Kandung"]);
-        
-        dataToExport.forEach(a => {
-            let phone = a.phone || "";
-            // Mapping data atlet ke kolom BPJSTK
-            wsData.push([a.nik || "", a.name, formatDob(a.dob), phone, "", "P060", "", "3275", 1000000, "T", 3, "", "", "", "", ""]);
-        });
+        dataToExport.forEach(a => { wsData.push([a.nik || "", a.name, fmtDate(a.dob), a.phone || "", "", "P060", "", "3275", 1000000, "T", 3, "", "", "", "", ""]); });
     } else {
-        fileName = `PERPANJANGAN_BPJS_TK_${monthLabel(currentMonth).toUpperCase().replace(/\s/g, "_")}.xlsx`;
-        
-        // Header mengikuti template BPJSTK Perpanjangan
         wsData.push(["", "", "", "List Kode Paket", "List Bulan Iuran", "", "", "", "", "", "", ""]);
         wsData.push(["Nomor Identitas*", "NAMA", "Upah*", "Kode Paket*", "Bulan Iuran*", "EXP", "", "", "", "", "", ""]);
-        
-        dataToExport.forEach(a => {
-            // Mapping data atlet ke kolom BPJSTK (Untuk perpanjangan Tgl. Lahir dsb tidak diperlukan)
-            wsData.push([a.nik || "", a.name, 1000000, "T", 3, "", "", "", "", "", "", ""]);
-        });
+        dataToExport.forEach(a => { wsData.push([a.nik || "", a.name, 1000000, "T", 3, fmtDate(a.bpjs_exp), "", "", "", "", "", ""]); });
     }
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(wb, fileName);
+    XLSX.writeFile(wb, `BPJSTK_${type.toUpperCase()}_${monthLabel(currentMonth)}.xlsx`);
 }
 
 window.addEventListener("load",init);
