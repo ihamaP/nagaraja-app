@@ -94,6 +94,7 @@ tr:last-child td{border-bottom:0}
 .mini-card .label{font-size:10px;color:var(--muted);margin-bottom:7px}
 .mini-card .value{font-size:22px;font-weight:800}
 .subsection{margin-top:18px}
+.bpjs-summary-note{font-size:11px;color:var(--muted);margin-top:4px}
 @media(max-width:1100px){
     .cards{grid-template-columns:repeat(2,1fr)}
     .bpjs-status-grid{grid-template-columns:repeat(3,1fr)}
@@ -280,11 +281,11 @@ tr:last-child td{border-bottom:0}
     <!-- BPJS TK -->
     <section id="bpjs" class="page">
         <div class="bpjs-status-grid">
-            <div class="mini-card"><div class="label">LUNAS BULAN INI</div><div class="value" id="bpjsPaidCount">0</div></div>
-            <div class="mini-card"><div class="label">PENDAFTARAN BARU</div><div class="value" id="bpjsNewCount">0</div></div>
-            <div class="mini-card"><div class="label">PERPANJANGAN</div><div class="value" id="bpjsRenewCount">0</div></div>
-            <div class="mini-card"><div class="label">NIK BELUM DIISI</div><div class="value" id="bpjsMissingNikCount">0</div></div>
-            <div class="mini-card"><div class="label">AKAN / SUDAH EXPIRED</div><div class="value" id="bpjsExpiryCount">0</div></div>
+            <div class="mini-card"><div class="label">PESERTA BPJS TK</div><div class="value" id="bpjsTotalCount">0</div><div class="bpjs-summary-note">Atlet + Coach aktif</div></div>
+            <div class="mini-card"><div class="label">AKTIF</div><div class="value" id="bpjsActiveCount">0</div></div>
+            <div class="mini-card"><div class="label">AKAN EXPIRED</div><div class="value" id="bpjsExpirySoonCount">0</div></div>
+            <div class="mini-card"><div class="label">EXPIRED</div><div class="value" id="bpjsExpiredCount">0</div></div>
+            <div class="mini-card"><div class="label">BELUM TERDAFTAR</div><div class="value" id="bpjsNotRegisteredCount">0</div></div>
         </div>
 
         <div class="card">
@@ -322,6 +323,24 @@ tr:last-child td{border-bottom:0}
             </div>
             <div class="modal-actions" style="justify-content:flex-start">
                 <button class="btn btn-secondary" onclick="saveBpjsConfig()">💾 Simpan Pengaturan</button>
+                <span id="bpjsPaidNote" style="font-size:11px;color:var(--muted)"></span>
+            </div>
+        </div>
+
+        <div class="card subsection">
+            <div class="section-title">👥 Data Peserta BPJS TK</div>
+            <div class="notice">
+                Data <b>Atlet</b> dan <b>Coach</b> ada dalam satu sistem BPJS TK. NIK dan EXP diisi manual.
+                <b>Status BPJS TK</b> dan <b>Tipe Kepesertaan</b> dihitung otomatis dari NIK + EXP.
+            </div>
+            <div class="toolbar">
+                <input id="bpjsParticipantSearch" placeholder="🔎 Cari nama / NIK / tipe peserta..." style="min-width:280px">
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>No</th><th>Nama</th><th>Tipe Peserta</th><th>NIK</th><th>EXP</th><th>Status BPJS TK</th><th>Tipe Kepesertaan</th><th>Action</th></tr></thead>
+                    <tbody id="bpjsParticipantTable"></tbody>
+                </table>
             </div>
         </div>
 
@@ -349,6 +368,23 @@ tr:last-child td{border-bottom:0}
                 <table>
                     <thead><tr><th>No</th><th>Nama</th><th>NIK</th><th>EXP BPJS TK</th><th>Status EXP</th><th>Iuran</th></tr></thead>
                     <tbody id="bpjsRenewTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+
+        <div class="card subsection">
+            <div class="section-title">🏀 Data Coach & BPJS TK</div>
+            <div class="notice">
+                Coach dikelola terpisah dari Data Atlet. Untuk BPJS, tandai <b>Sudah Bayar</b> pada bulan yang dipilih agar coach ikut ke export BPJS.
+            </div>
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="openCoachModal()">＋ Tambah Coach</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>No</th><th>Nama Coach</th><th>NIK</th><th>EXP BPJS TK</th><th>Kategori</th><th>Bayar BPJS Bulan Ini</th><th>Action</th></tr></thead>
+                    <tbody id="coachTable"></tbody>
                 </table>
             </div>
         </div>
@@ -405,9 +441,40 @@ tr:last-child td{border-bottom:0}
             <div class="field">
                 <label>HP BPJS TK</label>
                 <input class="form-control" id="fBpjsPhone" inputmode="tel" placeholder="08xxxxxxxxxx">
-                <small>Nomor HP peserta. Tidak otomatis mengambil HP orang tua.</small>
+                <small>Nomor HP peserta.</small>
             </div>
-
+            <div class="field">
+                <label>Email</label>
+                <input type="email" class="form-control" id="fBpjsEmail" placeholder="email@contoh.com">
+            </div>
+            <div class="field">
+                <label>Jenis Pekerjaan 1</label>
+                <input class="form-control" id="fBpjsJob1" placeholder="P060">
+            </div>
+            <div class="field">
+                <label>Jenis Pekerjaan 2</label>
+                <input class="form-control" id="fBpjsJob2">
+            </div>
+            <div class="field">
+                <label>Lokasi Pekerjaan</label>
+                <input class="form-control" id="fBpjsLocation" placeholder="3275">
+            </div>
+            <div class="field">
+                <label>Upah BPJS TK</label>
+                <input type="number" class="form-control" id="fBpjsWage" min="0">
+            </div>
+            <div class="field">
+                <label>Kode Paket</label>
+                <input class="form-control" id="fBpjsPackage" placeholder="T">
+            </div>
+            <div class="field">
+                <label>Bulan Iuran</label>
+                <input type="number" class="form-control" id="fBpjsMonths" min="1" step="1">
+            </div>
+            <div class="field full">
+                <label>Status BPJS TK</label>
+                <div id="fBpjsStatusPreview" class="notice" style="margin-bottom:0">Status dihitung otomatis dari NIK dan EXP.</div>
+            </div>
             <div class="field full"><label>Catatan</label><input class="form-control" id="fNote"></div>
         </div>
 
@@ -451,6 +518,32 @@ tr:last-child td{border-bottom:0}
     </div>
 </div>
 
+<!-- MODAL COACH -->
+<div class="modal" id="coachModal">
+    <div class="modal-box">
+        <div class="modal-head"><h2 id="coachModalTitle">Tambah Coach</h2><button class="close" onclick="closeModal('coachModal')">×</button></div>
+        <input type="hidden" id="editCoachId">
+
+        <div class="form-grid">
+            <div class="field full"><label>Nama Coach</label><input class="form-control" id="cName"></div>
+            <div class="field"><label>NIK</label><input class="form-control" id="cNik" inputmode="numeric" maxlength="16" placeholder="16 digit NIK"></div>
+            <div class="field"><label>EXP BPJS TK</label><input type="date" class="form-control" id="cExp"></div>
+            <div class="field"><label>Tanggal Lahir</label><input type="date" class="form-control" id="cDob"></div>
+            <div class="field"><label>HP Coach</label><input class="form-control" id="cPhone" inputmode="tel" placeholder="08xxxxxxxxxx"></div>
+            <div class="field"><label>Email</label><input class="form-control" id="cEmail" type="email" placeholder="email@contoh.com"></div>
+            <div class="field"><label>Jenis Pekerjaan 1</label><input class="form-control" id="cJob1" value="P060"></div>
+            <div class="field"><label>Jenis Pekerjaan 2</label><input class="form-control" id="cJob2"></div>
+            <div class="field"><label>Lokasi Pekerjaan</label><input class="form-control" id="cLocation" value="3275"></div>
+            <div class="field"><label>Status Coach</label><select class="form-control" id="cStatus"><option>Aktif</option><option>Tidak Aktif</option></select></div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('coachModal')">Batal</button>
+            <button class="btn btn-primary" onclick="saveCoach()">Simpan</button>
+        </div>
+    </div>
+</div>
+
 <script>
 const MONTHS = [
     {key:"2026-09", label:"September 2026"},
@@ -482,7 +575,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-let db = { athletes: [], dues: {} };
+let db = { athletes: [], dues: {}, coaches: {}, coachBpjs: {} };
 let currentMonth = localStorage.getItem("nagarajaMonth") || "2026-09";
 let isDataLoaded = false;
 
@@ -497,6 +590,10 @@ database.ref("nagarajaDB").on("value", (snapshot) => {
         db = data;
         if(!db.athletes) db.athletes = [];
         if(!db.dues) db.dues = {};
+        if(!db.coaches) db.coaches = {};
+        if(!db.coachBpjs) db.coachBpjs = {};
+    }else{
+        db = { athletes: [], dues: {}, coaches: {}, coachBpjs: {} };
     }
     if(!db.bpjsConfig) db.bpjsConfig = getDefaultBpjsConfig();
     isDataLoaded = true;
@@ -600,6 +697,9 @@ function init(){
     document.getElementById("duesSearch").addEventListener("input",renderDues);
     document.getElementById("followupSearch").addEventListener("input",renderFollowup);
     document.getElementById("receiptSearch").addEventListener("input",renderReceipts);
+    document.getElementById("bpjsParticipantSearch")?.addEventListener("input",renderBPJS);
+    document.getElementById("fNik")?.addEventListener("input",updateAthleteBpjsPreview);
+    document.getElementById("fBpjsExp")?.addEventListener("input",updateAthleteBpjsPreview);
     document.getElementById("excelFile").addEventListener("change",handleExcel);
 
     renderAll();
@@ -703,24 +803,70 @@ function renderDashboard(){
     saveDB();
 }
 
-function bpjsExpiryStatus(exp){
-    if(!exp) return {label:"Belum ada EXP", cls:"badge-gray"};
-    const d = new Date(exp+"T00:00:00");
-    if(Number.isNaN(d.getTime())) return {label:"Format EXP salah", cls:"badge-danger"};
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const diff = Math.ceil((d-today)/(1000*60*60*24));
-    if(diff < 0) return {label:"Expired", cls:"badge-danger"};
-    if(diff <= 30) return {label:`Akan expired (${diff} hari)`, cls:"badge-warning"};
-    return {label:"Aktif", cls:"badge-success"};
+function getParticipantBpjs(p){
+    const bp=p&&p.bpjs?p.bpjs:{};
+    return {
+        nik:String(p?.bpjsNik ?? bp.nik ?? "").replace(/\D/g,""),
+        exp:String(p?.bpjsExp ?? bp.expired ?? "").trim(),
+        dob:String(p?.bpjsDob ?? bp.dob ?? "").trim(),
+        phone:String(p?.bpjsPhone ?? bp.phone ?? "").trim(),
+        email:String(p?.bpjsEmail ?? bp.email ?? "").trim(),
+        job1:String(p?.bpjsJob1 ?? bp.job1 ?? "").trim(),
+        job2:String(p?.bpjsJob2 ?? bp.job2 ?? "").trim(),
+        location:String(p?.bpjsLocation ?? bp.location ?? "").trim(),
+        wage:Number(p?.bpjsWage ?? bp.wage ?? 0)||0,
+        package:String(p?.bpjsPackage ?? bp.package ?? "").trim(),
+        months:Number(p?.bpjsMonths ?? bp.months ?? 0)||0
+    };
 }
 
-function bpjsClassification(a){
-    const nik=String(a.bpjsNik||"").replace(/\D/g,"");
-    const exp=String(a.bpjsExp||"").trim();
-    if(!nik) return "incomplete";
-    if(!exp) return "new";
+function setParticipantBpjs(p,b){
+    p.bpjsNik=b.nik;
+    p.bpjsExp=b.exp;
+    p.bpjsDob=b.dob;
+    p.bpjsPhone=b.phone;
+    p.bpjsEmail=b.email;
+    p.bpjsJob1=b.job1;
+    p.bpjsJob2=b.job2;
+    p.bpjsLocation=b.location;
+    p.bpjsWage=b.wage;
+    p.bpjsPackage=b.package;
+    p.bpjsMonths=b.months;
+}
+
+function bpjsExpiryStatus(exp){
+    if(!exp) return {label:"Belum Terdaftar",cls:"badge-gray"};
+    const d=new Date(exp+"T00:00:00");
+    if(Number.isNaN(d.getTime())) return {label:"Format EXP salah",cls:"badge-danger"};
+    const today=new Date(); today.setHours(0,0,0,0);
+    const diff=Math.ceil((d-today)/(1000*60*60*24));
+    if(diff<0) return {label:"Expired",cls:"badge-danger"};
+    if(diff<=30) return {label:"Akan Expired",cls:"badge-warning",days:diff};
+    return {label:"Aktif",cls:"badge-success",days:diff};
+}
+
+function bpjsDerivedStatus(p){
+    const b=getParticipantBpjs(p);
+    if(!b.nik || !b.exp)return "Belum Terdaftar";
+    return bpjsExpiryStatus(b.exp).label;
+}
+
+function bpjsType(p){
+    const b=getParticipantBpjs(p);
+    return b.nik && b.exp ? "Existing" : b.nik ? "Baru" : "-";
+}
+
+function bpjsClassification(p){
+    const b=getParticipantBpjs(p);
+    if(!b.nik)return "incomplete";
+    if(!b.exp)return "new";
     return "renew";
+}
+
+function getActiveBpjsParticipants(){
+    const athletes=getActiveAthletes().map(a=>Object.assign({_type:"Atlet"},a));
+    const coaches=getCoaches().filter(c=>c.status!=="Tidak Aktif").map(c=>Object.assign({_type:"Coach"},c));
+    return athletes.concat(coaches);
 }
 
 function getPaidBpjsAthletes(){
@@ -730,88 +876,135 @@ function getPaidBpjsAthletes(){
     });
 }
 
-function formatBpjsPhone(v){
-    return String(v||"").trim();
-}
+function formatBpjsPhone(v){return String(v||"").trim();}
 
 function formatExcelDateDDMMYYYY(v){
-    if(!v) return "";
+    if(!v)return "";
     const p=String(v).split("-");
-    if(p.length===3 && p[0].length===4) return `${p[2]}-${p[1]}-${p[0]}`;
+    if(p.length===3 && p[0].length===4)return `${p[2]}-${p[1]}-${p[0]}`;
     return String(v);
 }
 
-function renderBPJS(){
-    const paid = getPaidBpjsAthletes();
-    const newList = paid.filter(a=>bpjsClassification(a)==="new");
-    const renewList = paid.filter(a=>bpjsClassification(a)==="renew");
-    const incomplete = paid.filter(a=>bpjsClassification(a)==="incomplete");
-    const expiryList = renewList.filter(a=>{
-        const s=bpjsExpiryStatus(a.bpjsExp).label;
-        return s==="Expired" || s.startsWith("Akan expired");
+function renderBpjsParticipantTable(){
+    const tb=document.getElementById("bpjsParticipantTable");
+    if(!tb)return;
+    const q=(document.getElementById("bpjsParticipantSearch")?.value||"").toLowerCase();
+    const rows=getActiveBpjsParticipants().filter(p=>{
+        const b=getParticipantBpjs(p);
+        return [p.name,p._type,b.nik].join(" ").toLowerCase().includes(q);
     });
+    tb.innerHTML=rows.length?rows.map((p,i)=>{
+        const b=getParticipantBpjs(p);
+        const st=bpjsDerivedStatus(p);
+        const type=bpjsType(p);
+        const edit=p._type==="Atlet"?`editAthlete('${esc(p.id)}')`:`editCoach('${esc(p.id)}')`;
+        const stCls=st==="Aktif"?"badge-success":st==="Expired"?"badge-danger":st==="Akan Expired"?"badge-warning":"badge-gray";
+        const typeCls=type==="Existing"?"badge-info":type==="Baru"?"badge-warning":"badge-gray";
+        return `<tr>
+            <td>${i+1}</td><td><b>${esc(p.name)}</b></td><td>${esc(p._type)}</td>
+            <td>${b.nik?esc(b.nik):'<span class="badge badge-warning">Belum diisi</span>'}</td>
+            <td>${b.exp?esc(formatDate(b.exp)):'-'}</td>
+            <td><span class="badge ${stCls}">${esc(st)}</span></td>
+            <td><span class="badge ${typeCls}">${esc(type)}</span></td>
+            <td><button class="btn btn-secondary btn-sm" onclick="${edit}">Edit</button></td>
+        </tr>`;
+    }).join(""): `<tr><td colspan="8" class="empty">Belum ada peserta BPJS TK.</td></tr>`;
+}
 
-    document.getElementById("bpjsPaidCount").textContent=paid.length;
-    document.getElementById("bpjsNewCount").textContent=newList.length;
-    document.getElementById("bpjsRenewCount").textContent=renewList.length;
-    document.getElementById("bpjsMissingNikCount").textContent=incomplete.length;
-    document.getElementById("bpjsExpiryCount").textContent=expiryList.length;
+function getBpjsPaidCoaches(){
+    return getCoaches().filter(c=>{
+        if(c.status==="Tidak Aktif")return false;
+        return getCoachBpjs(c.id).paid==="Sudah Bayar";
+    });
+}
 
+function mapCoachForBpjs(c){
+    return Object.assign({_type:"Coach"},c,{
+        bpjsNik:c.nik||"",bpjsExp:c.exp||"",bpjsDob:c.dob||"",bpjsPhone:c.phone||"",bpjsEmail:c.email||"",
+        bpjsJob1:c.job1||"",bpjsJob2:c.job2||"",bpjsLocation:c.location||"",
+        bpjsWage:Number(c.wage||0)||0,bpjsPackage:c.package||"",bpjsMonths:Number(c.months||0)||0
+    });
+}
+
+function allBpjsNewExportList(){
+    const athletes=getPaidBpjsAthletes().filter(a=>bpjsClassification(a)==="new").map(a=>Object.assign({_type:"Atlet"},a));
+    const coaches=getBpjsPaidCoaches().filter(c=>bpjsClassification(mapCoachForBpjs(c))==="new").map(mapCoachForBpjs);
+    return athletes.concat(coaches);
+}
+
+function allBpjsRenewExportList(){
+    const athletes=getPaidBpjsAthletes().filter(a=>bpjsClassification(a)==="renew").map(a=>Object.assign({_type:"Atlet"},a));
+    const coaches=getBpjsPaidCoaches().filter(c=>bpjsClassification(mapCoachForBpjs(c))==="renew").map(mapCoachForBpjs);
+    return athletes.concat(coaches);
+}
+
+function allBpjsPaidIncomplete(){
+    const athletes=getPaidBpjsAthletes().filter(a=>bpjsClassification(a)==="incomplete").map(a=>Object.assign({_type:"Atlet"},a));
+    const coaches=getBpjsPaidCoaches().filter(c=>bpjsClassification(mapCoachForBpjs(c))==="incomplete").map(mapCoachForBpjs);
+    return athletes.concat(coaches);
+}
+
+function renderBPJS(){
+    renderBpjsParticipantTable();
+    const participants=getActiveBpjsParticipants();
+    const statuses=participants.map(bpjsDerivedStatus);
+    const paidAthletes=getPaidBpjsAthletes();
+    const paidCoaches=getBpjsPaidCoaches();
+    const allNew=allBpjsNewExportList();
+    const allRenew=allBpjsRenewExportList();
+    const incompleteAll=allBpjsPaidIncomplete();
+
+    document.getElementById("bpjsTotalCount").textContent=participants.length;
+    document.getElementById("bpjsActiveCount").textContent=statuses.filter(x=>x==="Aktif").length;
+    document.getElementById("bpjsExpirySoonCount").textContent=statuses.filter(x=>x==="Akan Expired").length;
+    document.getElementById("bpjsExpiredCount").textContent=statuses.filter(x=>x==="Expired").length;
+    document.getElementById("bpjsNotRegisteredCount").textContent=statuses.filter(x=>x==="Belum Terdaftar").length;
+
+    renderCoaches();
     renderBpjsSettings();
 
-    document.getElementById("bpjsNewNotice").innerHTML = newList.length
-        ? `Ada <b>${newList.length}</b> peserta siap dimasukkan ke Pendaftaran Baru. Pastikan <b>Tanggal Lahir</b> dan <b>HP BPJS TK</b> sudah diisi bila diperlukan oleh BPJS.`
-        : `Belum ada peserta yang masuk kategori Pendaftaran Baru untuk ${esc(monthLabel(currentMonth))}.`;
-
-    document.getElementById("bpjsRenewNotice").innerHTML = renewList.length
-        ? `Ada <b>${renewList.length}</b> peserta siap dimasukkan ke Perpanjangan untuk ${esc(monthLabel(currentMonth))}.`
-        : `Belum ada peserta yang masuk kategori Perpanjangan untuk ${esc(monthLabel(currentMonth))}.`;
+    document.getElementById("bpjsNewNotice").innerHTML=allNew.length
+        ? `Ada <b>${allNew.length}</b> peserta (atlet + coach) siap untuk Pendaftaran Baru pada ${esc(monthLabel(currentMonth))}.`
+        : `Belum ada peserta Pendaftaran Baru yang sudah lunas pada ${esc(monthLabel(currentMonth))}.`;
+    document.getElementById("bpjsRenewNotice").innerHTML=allRenew.length
+        ? `Ada <b>${allRenew.length}</b> peserta (atlet + coach) siap untuk Perpanjangan pada ${esc(monthLabel(currentMonth))}.`
+        : `Belum ada peserta Perpanjangan yang sudah lunas pada ${esc(monthLabel(currentMonth))}.`;
 
     const newTb=document.getElementById("bpjsNewTable");
-    newTb.innerHTML=newList.length
-        ? newList.map((a,i)=>{
-            const d=db.dues[currentMonth][a.id];
-            const complete=a.bpjsDob && a.bpjsPhone;
-            return `<tr>
-                <td>${i+1}</td>
-                <td><b>${esc(a.name)}</b><br><small>${esc(a.nra||"")}</small></td>
-                <td>${esc(a.bpjsNik)}</td>
-                <td>${esc(formatDate(a.bpjsDob)||"-")}</td>
-                <td>${esc(formatBpjsPhone(a.bpjsPhone)||"-")}</td>
-                <td><span class="badge ${complete?"badge-success":"badge-warning"}">${complete?"Lengkap":"Perlu dilengkapi"}</span></td>
-                <td>${rupiah(d.amount)}</td>
-            </tr>`;
-        }).join("")
-        : `<tr><td colspan="7" class="empty">Tidak ada peserta pendaftaran baru.</td></tr>`;
+    newTb.innerHTML=allNew.length?allNew.map((p,i)=>{
+        const b=getParticipantBpjs(p);
+        const d=p._type==="Atlet"?db.dues[currentMonth][p.id]:getCoachBpjs(p.id);
+        const complete=!!b.dob && !!b.phone;
+        return `<tr><td>${i+1}</td><td><b>${esc(p.name)}</b><br><small>${esc(p._type)}</small></td>
+            <td>${esc(b.nik)}</td><td>${esc(formatDate(b.dob)||"-")}</td><td>${esc(formatBpjsPhone(b.phone)||"-")}</td>
+            <td><span class="badge ${complete?"badge-success":"badge-warning"}">${complete?"Lengkap":"Perlu dilengkapi"}</span></td><td>${rupiah(d.amount||0)}</td></tr>`;
+    }).join(""): `<tr><td colspan="7" class="empty">Tidak ada peserta pendaftaran baru.</td></tr>`;
 
     const renewTb=document.getElementById("bpjsRenewTable");
-    renewTb.innerHTML=renewList.length
-        ? renewList.map((a,i)=>{
-            const d=db.dues[currentMonth][a.id];
-            const st=bpjsExpiryStatus(a.bpjsExp);
-            return `<tr>
-                <td>${i+1}</td>
-                <td><b>${esc(a.name)}</b><br><small>${esc(a.nra||"")}</small></td>
-                <td>${esc(a.bpjsNik)}</td>
-                <td>${esc(formatDate(a.bpjsExp))}</td>
-                <td><span class="badge ${st.cls}">${esc(st.label)}</span></td>
-                <td>${rupiah(d.amount)}</td>
-            </tr>`;
-        }).join("")
-        : `<tr><td colspan="6" class="empty">Tidak ada peserta perpanjangan.</td></tr>`;
+    renewTb.innerHTML=allRenew.length?allRenew.map((p,i)=>{
+        const b=getParticipantBpjs(p);
+        const d=p._type==="Atlet"?db.dues[currentMonth][p.id]:getCoachBpjs(p.id);
+        const st=bpjsExpiryStatus(b.exp);
+        return `<tr><td>${i+1}</td><td><b>${esc(p.name)}</b><br><small>${esc(p._type)}</small></td>
+            <td>${esc(b.nik)}</td><td>${esc(formatDate(b.exp))}</td>
+            <td><span class="badge ${st.cls}">${esc(st.label)}${st.days!=null?` (${st.days} hari)`:""}</span></td><td>${rupiah(d.amount||0)}</td></tr>`;
+    }).join(""): `<tr><td colspan="6" class="empty">Tidak ada peserta perpanjangan.</td></tr>`;
 
     const incTb=document.getElementById("bpjsIncompleteTable");
-    incTb.innerHTML=incomplete.length
-        ? incomplete.map((a,i)=>{
-            const d=db.dues[currentMonth][a.id];
-            return `<tr>
-                <td>${i+1}</td><td><b>${esc(a.name)}</b></td><td>${esc(a.parent)}</td>
-                <td><span class="badge badge-warning">Belum diisi</span></td>
-                <td>${esc(formatDate(a.bpjsExp)||"-")}</td><td>${rupiah(d.amount)}</td>
-                <td><button class="btn btn-secondary btn-sm" onclick="editAthlete('${esc(a.id)}')">Isi NIK</button></td>
-            </tr>`;
-        }).join("")
-        : `<tr><td colspan="7" class="empty">Semua peserta lunas bulan ini sudah memiliki NIK.</td></tr>`;
+    incTb.innerHTML=incompleteAll.length?incompleteAll.map((p,i)=>{
+        const b=getParticipantBpjs(p);
+        const d=p._type==="Atlet"?db.dues[currentMonth][p.id]:getCoachBpjs(p.id);
+        const parent=p._type==="Atlet"?p.parent||"-":"Coach";
+        const action=p._type==="Atlet"?`editAthlete('${esc(p.id)}')`:`editCoach('${esc(p.id)}')`;
+        return `<tr><td>${i+1}</td><td><b>${esc(p.name)}</b></td><td>${esc(parent)}</td>
+            <td><span class="badge badge-warning">Belum diisi</span></td><td>${esc(formatDate(b.exp)||"-")}</td><td>${rupiah(d.amount||0)}</td>
+            <td><button class="btn btn-secondary btn-sm" onclick="${action}">Isi NIK</button></td></tr>`;
+    }).join(""): `<tr><td colspan="7" class="empty">Semua peserta yang lunas bulan ini sudah memiliki NIK.</td></tr>`;
+
+    // Menunjukkan peserta lunas untuk transparansi: atlet + coach.
+    const paidTotal=paidAthletes.length+paidCoaches.length;
+    const paidNote=document.getElementById("bpjsPaidNote");
+    if(paidNote)paidNote.textContent=`${paidTotal} peserta sudah ditandai lunas BPJS untuk ${monthLabel(currentMonth)}.`;
 }
 
 function renderAthletes(){
@@ -824,15 +1017,16 @@ function renderAthletes(){
     });
 
     document.getElementById("athleteTable").innerHTML=data.length?data.map((a,i)=>{
-        const expSt=a.bpjsExp?bpjsExpiryStatus(a.bpjsExp):null;
+        const b=getParticipantBpjs(a);
+        const expSt=b.exp?bpjsExpiryStatus(b.exp):null;
         return `<tr>
             <td>${i+1}</td>
             <td>${a.nra ? esc(a.nra) : '<span class="badge badge-warning">Belum ada NRA</span>'}</td>
             <td><b>${esc(a.name)}</b></td>
             <td>${esc(a.parent)}</td>
             <td>${esc(a.phone)}</td>
-            <td>${a.bpjsNik ? esc(a.bpjsNik) : '<span class="badge badge-warning">Belum diisi</span>'}</td>
-            <td>${a.bpjsExp ? `<span class="badge ${expSt.cls}">${esc(formatDate(a.bpjsExp))}</span>` : '<span class="badge badge-gray">Belum diisi</span>'}</td>
+            <td>${b.nik ? esc(b.nik) : '<span class="badge badge-warning">Belum diisi</span>'}</td>
+            <td>${b.exp ? `<span class="badge ${expSt.cls}">${esc(formatDate(b.exp))}</span>` : '<span class="badge badge-gray">Belum diisi</span>'}</td>
             <td><span class="badge ${a.status==="Aktif"?"badge-success":"badge-gray"}">${esc(a.status)}</span></td>
             <td>
                 <button class="btn btn-secondary btn-sm" onclick="editAthlete('${esc(a.id)}')">Edit</button>
@@ -894,21 +1088,38 @@ function openAthleteModal(id=null){
     document.getElementById("editAthleteIndex").value=id||"";
 
     const a=id?db.athletes.find(x=>x.id===id):{};
+    const b=getParticipantBpjs(a);
+    const c=getBpjsConfig();
+
     document.getElementById("fNra").value=a.nra||"";
     document.getElementById("fName").value=a.name||"";
     document.getElementById("fParent").value=a.parent||"";
     document.getElementById("fPhone").value=a.phone||"";
     document.getElementById("fStatus").value=a.status||"Aktif";
     document.getElementById("fJoinDate").value=a.joinDate||"";
-    document.getElementById("fNik").value=a.bpjsNik||"";
-    document.getElementById("fBpjsExp").value=a.bpjsExp||"";
-    document.getElementById("fBirthDate").value=a.bpjsDob||"";
-    document.getElementById("fBpjsPhone").value=a.bpjsPhone||"";
+    document.getElementById("fNik").value=b.nik;
+    document.getElementById("fBpjsExp").value=b.exp;
+    document.getElementById("fBirthDate").value=b.dob;
+    document.getElementById("fBpjsPhone").value=b.phone;
+    document.getElementById("fBpjsEmail").value=b.email;
+    document.getElementById("fBpjsJob1").value=b.job1||c.job1;
+    document.getElementById("fBpjsJob2").value=b.job2||c.job2;
+    document.getElementById("fBpjsLocation").value=b.location||c.location;
+    document.getElementById("fBpjsWage").value=b.wage||c.wage;
+    document.getElementById("fBpjsPackage").value=b.package||c.package;
+    document.getElementById("fBpjsMonths").value=b.months||c.months;
+    document.getElementById("fBpjsStatusPreview").innerHTML=`Status otomatis: <b>${esc(bpjsDerivedStatus(a))}</b> · Tipe: <b>${esc(bpjsType(a))}</b>`;
     document.getElementById("fNote").value=a.note||"";
+}
+
+function updateAthleteBpjsPreview(){
+    const fake={bpjsNik:document.getElementById("fNik").value.replace(/\D/g,""),bpjsExp:document.getElementById("fBpjsExp").value};
+    document.getElementById("fBpjsStatusPreview").innerHTML=`Status otomatis: <b>${esc(bpjsDerivedStatus(fake))}</b> · Tipe: <b>${esc(bpjsType(fake))}</b>`;
 }
 
 function saveAthlete(){
     const id=document.getElementById("editAthleteIndex").value;
+    const bpjsNik=document.getElementById("fNik").value.replace(/\D/g,"").slice(0,16);
     const obj={
         id:id||("A"+Date.now()),
         nra:document.getElementById("fNra").value.trim(),
@@ -917,30 +1128,30 @@ function saveAthlete(){
         phone:document.getElementById("fPhone").value.trim(),
         status:document.getElementById("fStatus").value,
         joinDate:document.getElementById("fJoinDate").value,
-        bpjsNik:document.getElementById("fNik").value.replace(/\D/g,"").slice(0,16),
+        bpjsNik:bpjsNik,
         bpjsExp:document.getElementById("fBpjsExp").value,
         bpjsDob:document.getElementById("fBirthDate").value,
         bpjsPhone:document.getElementById("fBpjsPhone").value.trim(),
+        bpjsEmail:document.getElementById("fBpjsEmail").value.trim(),
+        bpjsJob1:document.getElementById("fBpjsJob1").value.trim(),
+        bpjsJob2:document.getElementById("fBpjsJob2").value.trim(),
+        bpjsLocation:document.getElementById("fBpjsLocation").value.trim(),
+        bpjsWage:Number(document.getElementById("fBpjsWage").value)||1000000,
+        bpjsPackage:document.getElementById("fBpjsPackage").value.trim()||"T",
+        bpjsMonths:Number(document.getElementById("fBpjsMonths").value)||3,
         note:document.getElementById("fNote").value.trim()
     };
 
     if(!obj.name){alert("Nama atlet wajib diisi.");return;}
-    if(obj.bpjsNik && obj.bpjsNik.length!==16){
-        alert("NIK harus 16 digit.");
-        return;
-    }
+    if(bpjsNik && bpjsNik.length!==16){alert("NIK harus 16 digit.");return;}
 
     if(id){
         const idx=db.athletes.findIndex(a=>a.id===id);
         if(idx<0){alert("Data atlet tidak ditemukan.");return;}
         db.athletes[idx]=Object.assign({},db.athletes[idx],obj);
-    }else{
-        db.athletes.push(obj);
-    }
+    }else db.athletes.push(obj);
 
-    saveDB();
-    closeModal("athleteModal");
-    renderAll();
+    saveDB();closeModal("athleteModal");renderAll();
 }
 
 function editAthlete(id){openAthleteModal(id)}
@@ -1354,6 +1565,13 @@ function handleExcel(e){
                         bpjsExp:"",
                         bpjsDob:"",
                         bpjsPhone:"",
+                        bpjsEmail:"",
+                        bpjsJob1:"",
+                        bpjsJob2:"",
+                        bpjsLocation:"",
+                        bpjsWage:1000000,
+                        bpjsPackage:"T",
+                        bpjsMonths:3,
                         note:nra ? "" : "NRA belum tersedia"
                     };
                     db.athletes.push(a);
@@ -1456,7 +1674,7 @@ function getBpjsPaidRenewList(){
 function exportBpjsRenew(){
     if(!ensureXlsx())return;
 
-    const list=getBpjsPaidRenewList();
+    const list=allBpjsRenewExportList();
     if(!list.length){
         alert("Tidak ada peserta yang memenuhi syarat perpanjangan untuk "+monthLabel(currentMonth)+".");
         return;
@@ -1478,12 +1696,12 @@ function exportBpjsRenew(){
 
     list.forEach(a=>{
         rows.push([
-            String(a.bpjsNik||""),
-            String(a.name||""),
+            String(a.bpjsNik || a.nik || ""),
+            String(a.name || ""),
             Number(c.wage)||1000000,
             String(c.package||"T"),
             Number(c.months)||3,
-            formatExcelDateDDMMYYYY(a.bpjsExp)
+            formatExcelDateDDMMYYYY(a.bpjsExp || a.exp)
         ]);
     });
 
@@ -1507,7 +1725,7 @@ function exportBpjsRenew(){
 function exportBpjsNew(){
     if(!ensureXlsx())return;
 
-    const list=getBpjsPaidNewList();
+    const list=allBpjsNewExportList();
     if(!list.length){
         alert("Tidak ada peserta yang memenuhi syarat pendaftaran baru untuk "+monthLabel(currentMonth)+".");
         return;
@@ -1543,14 +1761,14 @@ function exportBpjsNew(){
         if(!a.bpjsDob || !a.bpjsPhone)incomplete++;
 
         rows.push([
-            String(a.bpjsNik||""),
-            String(a.name||""),
-            formatExcelDateDDMMYYYY(a.bpjsDob),
-            String(a.bpjsPhone||""),
-            "",
-            String(a.bpjsJob1||c.job1||"P060"),
-            String(a.bpjsJob2||c.job2||""),
-            String(a.bpjsLocation||c.location||"3275"),
+            String(a.bpjsNik || a.nik || ""),
+            String(a.name || ""),
+            formatExcelDateDDMMYYYY(a.bpjsDob || a.dob),
+            String(a.bpjsPhone || a.phone || ""),
+            String(a.email || ""),
+            String(a.bpjsJob1 || a.job1 || c.job1 || "P060"),
+            String(a.bpjsJob2 || a.job2 || c.job2 || ""),
+            String(a.bpjsLocation || a.location || c.location || "3275"),
             Number(c.wage)||1000000,
             String(c.package||"T"),
             Number(c.months)||3,
