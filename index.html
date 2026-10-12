@@ -291,8 +291,9 @@ tr:last-child td{border-bottom:0}
         <div class="card">
             <div class="section-title">🛡️ BPJS TK — Pengaturan Export</div>
             <div class="notice">
-                Peserta yang bisa masuk daftar BPJS adalah atlet aktif yang <b>sudah lunas iuran</b> pada bulan yang dipilih.
-                Klasifikasi otomatis: <b>NIK ada + EXP kosong = Pendaftaran Baru</b>; <b>NIK + EXP ada = Perpanjangan</b>.
+                Daftar di bawah menampilkan semua peserta aktif berdasarkan data NIK/EXP yang sudah disimpan.
+                <b>Export hanya mengambil peserta yang sudah ditandai Sudah Bayar</b> pada bulan yang dipilih.
+                Klasifikasi: <b>NIK ada + EXP kosong = Pendaftaran Baru</b>; <b>NIK + EXP ada = Perpanjangan</b>.
             </div>
             <div class="form-grid">
                 <div class="field">
@@ -328,6 +329,31 @@ tr:last-child td{border-bottom:0}
         </div>
 
         <div class="card subsection">
+            <div class="section-title">📥 Import Nomor Atlet, NIK & EXP dari Excel</div>
+            <div class="notice">
+                Pilih file BPJSTK.xlsx. Aplikasi hanya membaca sheet <b>MASTER DATA</b>, lalu mencocokkan nomor atlet dan nama dengan data atlet yang <b>sudah ada di database aplikasi</b>.
+                Data baru tidak akan ditambahkan. Sheet <b>Data Coach</b> diabaikan pada proses ini.
+                Hanya nomor atlet (jika belum ada), NIK yang valid 16 digit, dan tanggal EXP yang terbaca sebagai tanggal yang akan diperbarui.
+            </div>
+            <div class="toolbar">
+                <label class="btn btn-primary" for="bpjsImportFile">Pilih File BPJSTK.xlsx</label>
+                <input type="file" id="bpjsImportFile" accept=".xlsx,.xls" style="display:none">
+                <button class="btn btn-secondary" id="bpjsImportClearBtn" type="button" onclick="clearBpjsImportPreview()">Bersihkan Preview</button>
+            </div>
+            <div id="bpjsImportSummary"></div>
+            <div class="table-wrap" id="bpjsImportPreviewWrap" style="display:none">
+                <table style="min-width:1100px">
+                    <thead><tr><th>No</th><th>No. Atlet di Excel</th><th>Nama di Excel</th><th>NIK Excel</th><th>EXP Excel</th><th>Hasil Pencocokan</th><th>Pasangkan ke Atlet di Database</th></tr></thead>
+                    <tbody id="bpjsImportPreviewTable"></tbody>
+                </table>
+            </div>
+            <div class="toolbar" id="bpjsImportActions" style="display:none;margin-top:12px">
+                <button class="btn btn-success" type="button" onclick="applyBpjsImport()">✅ Terapkan ke Database Atlet yang Dipilih</button>
+                <span style="font-size:11px;color:var(--muted)">Tidak ada nama baru yang akan dibuat.</span>
+            </div>
+        </div>
+
+        <div class="card subsection">
             <div class="section-title">👥 Data Peserta BPJS TK</div>
             <div class="notice">
                 Data <b>Atlet</b> dan <b>Coach</b> ada dalam satu sistem BPJS TK. NIK dan EXP diisi manual.
@@ -352,7 +378,7 @@ tr:last-child td{border-bottom:0}
             </div>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>No</th><th>Nama</th><th>NIK</th><th>Tgl Lahir</th><th>HP BPJS</th><th>Status Data</th><th>Iuran</th></tr></thead>
+                    <thead><tr><th>No</th><th>Nama</th><th>NIK</th><th>Tgl Lahir</th><th>HP BPJS</th><th>Status Data</th><th>Iuran / Status Bayar</th></tr></thead>
                     <tbody id="bpjsNewTable"></tbody>
                 </table>
             </div>
@@ -366,7 +392,7 @@ tr:last-child td{border-bottom:0}
             </div>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>No</th><th>Nama</th><th>NIK</th><th>EXP BPJS TK</th><th>Status EXP</th><th>Iuran</th></tr></thead>
+                    <thead><tr><th>No</th><th>Nama</th><th>NIK</th><th>EXP BPJS TK</th><th>Status EXP</th><th>Iuran / Status Bayar</th></tr></thead>
                     <tbody id="bpjsRenewTable"></tbody>
                 </table>
             </div>
@@ -391,10 +417,10 @@ tr:last-child td{border-bottom:0}
 
         <div class="card subsection">
             <div class="section-title">⚠️ Data BPJS Belum Lengkap</div>
-            <div class="notice">Peserta di bawah ini sudah lunas tetapi NIK belum diisi, sehingga belum bisa dimasukkan ke export BPJS.</div>
+            <div class="notice">Daftar peserta aktif yang NIK-nya belum diisi. Mereka tidak akan masuk export sampai NIK dilengkapi.</div>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>No</th><th>Nama</th><th>Orang Tua</th><th>NIK</th><th>EXP BPJS TK</th><th>Iuran</th><th>Action</th></tr></thead>
+                    <thead><tr><th>No</th><th>Nama</th><th>Orang Tua</th><th>NIK</th><th>EXP BPJS TK</th><th>Iuran / Status Bayar</th><th>Action</th></tr></thead>
                     <tbody id="bpjsIncompleteTable"></tbody>
                 </table>
             </div>
@@ -698,6 +724,7 @@ function init(){
     document.getElementById("followupSearch").addEventListener("input",renderFollowup);
     document.getElementById("receiptSearch").addEventListener("input",renderReceipts);
     document.getElementById("bpjsParticipantSearch")?.addEventListener("input",renderBPJS);
+    document.getElementById("bpjsImportFile")?.addEventListener("change",handleBpjsRosterImport);
     document.getElementById("fNik")?.addEventListener("input",updateAthleteBpjsPreview);
     document.getElementById("fBpjsExp")?.addEventListener("input",updateAthleteBpjsPreview);
     document.getElementById("excelFile").addEventListener("change",handleExcel);
@@ -805,18 +832,20 @@ function renderDashboard(){
 
 function getParticipantBpjs(p){
     const bp=p&&p.bpjs?p.bpjs:{};
+    // Pakai fallback untuk nilai kosong juga, bukan hanya null/undefined,
+    // supaya format data BPJS lama dan baru sama-sama terbaca.
     return {
-        nik:String(p?.bpjsNik ?? bp.nik ?? "").replace(/\D/g,""),
-        exp:String(p?.bpjsExp ?? bp.expired ?? "").trim(),
-        dob:String(p?.bpjsDob ?? bp.dob ?? "").trim(),
-        phone:String(p?.bpjsPhone ?? bp.phone ?? "").trim(),
-        email:String(p?.bpjsEmail ?? bp.email ?? "").trim(),
-        job1:String(p?.bpjsJob1 ?? bp.job1 ?? "").trim(),
-        job2:String(p?.bpjsJob2 ?? bp.job2 ?? "").trim(),
-        location:String(p?.bpjsLocation ?? bp.location ?? "").trim(),
-        wage:Number(p?.bpjsWage ?? bp.wage ?? 0)||0,
-        package:String(p?.bpjsPackage ?? bp.package ?? "").trim(),
-        months:Number(p?.bpjsMonths ?? bp.months ?? 0)||0
+        nik:String(p?.bpjsNik || bp.nik || "").replace(/\D/g,""),
+        exp:String(p?.bpjsExp || bp.expired || bp.exp || "").trim(),
+        dob:String(p?.bpjsDob || bp.dob || "").trim(),
+        phone:String(p?.bpjsPhone || bp.phone || "").trim(),
+        email:String(p?.bpjsEmail || bp.email || "").trim(),
+        job1:String(p?.bpjsJob1 || bp.job1 || "").trim(),
+        job2:String(p?.bpjsJob2 || bp.job2 || "").trim(),
+        location:String(p?.bpjsLocation || bp.location || "").trim(),
+        wage:Number(p?.bpjsWage || bp.wage || 0)||0,
+        package:String(p?.bpjsPackage || bp.package || "").trim(),
+        months:Number(p?.bpjsMonths || bp.months || 0)||0
     };
 }
 
@@ -863,9 +892,126 @@ function bpjsClassification(p){
     return "renew";
 }
 
+function getCoaches(){
+    const source=db.coaches||{};
+    if(Array.isArray(source)){
+        return source.filter(Boolean).map((c,i)=>Object.assign({id:c.id||("C"+(i+1))},c));
+    }
+    return Object.entries(source).filter(([,c])=>c && typeof c==="object")
+        .map(([id,c])=>Object.assign({id},c));
+}
+
+function getCoachRecord(id){
+    if(Array.isArray(db.coaches)) return db.coaches.find(c=>c && c.id===id)||null;
+    return (db.coaches||{})[id]||null;
+}
+
+function getCoachBpjs(id){
+    if(!db.coachBpjs || typeof db.coachBpjs!=="object") db.coachBpjs={};
+    if(!db.coachBpjs[currentMonth] || typeof db.coachBpjs[currentMonth]!=="object") db.coachBpjs[currentMonth]={};
+    if(!db.coachBpjs[currentMonth][id]){
+        db.coachBpjs[currentMonth][id]={paid:"Belum Bayar",amount:0,note:"",paidDate:""};
+    }
+    return db.coachBpjs[currentMonth][id];
+}
+
+function openCoachModal(id=""){
+    const c=id?getCoachRecord(id):null;
+    const cfg=getBpjsConfig();
+    document.getElementById("editCoachId").value=id||"";
+    document.getElementById("coachModalTitle").textContent=id?"Edit Coach":"Tambah Coach";
+    document.getElementById("cName").value=c?.name||"";
+    document.getElementById("cNik").value=c?.nik||c?.bpjsNik||"";
+    document.getElementById("cExp").value=c?.exp||c?.bpjsExp||"";
+    document.getElementById("cDob").value=c?.dob||c?.bpjsDob||"";
+    document.getElementById("cPhone").value=c?.phone||c?.bpjsPhone||"";
+    document.getElementById("cEmail").value=c?.email||c?.bpjsEmail||"";
+    document.getElementById("cJob1").value=c?.job1||c?.bpjsJob1||cfg.job1;
+    document.getElementById("cJob2").value=c?.job2||c?.bpjsJob2||cfg.job2;
+    document.getElementById("cLocation").value=c?.location||c?.bpjsLocation||cfg.location;
+    document.getElementById("cStatus").value=c?.status||"Aktif";
+    document.getElementById("coachModal").classList.add("show");
+}
+
+function saveCoach(){
+    const editingId=document.getElementById("editCoachId").value;
+    const id=editingId||("C"+Date.now().toString(36)+Math.random().toString(36).slice(2,5));
+    const nik=document.getElementById("cNik").value.replace(/\D/g,"").slice(0,16);
+    if(!document.getElementById("cName").value.trim()){
+        alert("Nama coach wajib diisi.");return;
+    }
+    if(nik && nik.length!==16){alert("NIK coach harus 16 digit.");return;}
+    const cfg=getBpjsConfig();
+    const record={
+        id,
+        name:document.getElementById("cName").value.trim(),
+        nik,
+        exp:document.getElementById("cExp").value,
+        dob:document.getElementById("cDob").value,
+        phone:document.getElementById("cPhone").value.trim(),
+        email:document.getElementById("cEmail").value.trim(),
+        job1:document.getElementById("cJob1").value.trim()||cfg.job1,
+        job2:document.getElementById("cJob2").value.trim()||cfg.job2,
+        location:document.getElementById("cLocation").value.trim()||cfg.location,
+        wage:cfg.wage,
+        package:cfg.package,
+        months:cfg.months,
+        status:document.getElementById("cStatus").value
+    };
+    if(!db.coaches || typeof db.coaches!=="object" || Array.isArray(db.coaches)) db.coaches={};
+    db.coaches[id]=record;
+    getCoachBpjs(id);
+    saveDB();
+    closeModal("coachModal");
+    renderAll();
+}
+
+function editCoach(id){openCoachModal(id);}
+
+function toggleCoachPayment(id){
+    const d=getCoachBpjs(id);
+    d.paid=d.paid==="Sudah Bayar"?"Belum Bayar":"Sudah Bayar";
+    if(d.paid==="Sudah Bayar"&&!d.paidDate)d.paidDate=new Date().toISOString().slice(0,10);
+    saveDB();
+    renderAll();
+}
+
+function renderCoaches(){
+    const tb=document.getElementById("coachTable");
+    if(!tb)return;
+    const rows=getCoaches().filter(c=>c.status!=="Tidak Aktif");
+    if(!rows.length){tb.innerHTML='<tr><td colspan="7" class="empty">Belum ada data coach. Klik Tambah Coach jika perlu.</td></tr>';return;}
+    tb.innerHTML=rows.map((c,i)=>{
+        const b=getParticipantBpjs(mapCoachForBpjs(c));
+        const cls=bpjsClassification(mapCoachForBpjs(c));
+        const cat=cls==="new"?"Pendaftaran Baru":cls==="renew"?"Perpanjangan":"Belum Lengkap";
+        const pay=getCoachBpjs(c.id);
+        const st=b.exp?bpjsExpiryStatus(b.exp):null;
+        return `<tr><td>${i+1}</td><td><b>${esc(c.name||"")}</b></td>
+            <td>${b.nik?esc(b.nik):'<span class="badge badge-warning">Belum diisi</span>'}</td>
+            <td>${b.exp?`<span class="badge ${st.cls}">${esc(formatDate(b.exp))}</span>`:'<span class="badge badge-gray">Belum diisi</span>'}</td>
+            <td><span class="badge ${cls==="renew"?"badge-info":cls==="new"?"badge-warning":"badge-gray"}">${cat}</span></td>
+            <td><span class="badge ${pay.paid==="Sudah Bayar"?"badge-success":"badge-danger"}">${esc(pay.paid||"Belum Bayar")}</span></td>
+            <td><button class="btn ${pay.paid==="Sudah Bayar"?"btn-warning":"btn-success"} btn-sm" onclick="toggleCoachPayment('${esc(c.id)}')">${pay.paid==="Sudah Bayar"?"Batalkan Lunas":"Tandai Lunas"}</button> <button class="btn btn-secondary btn-sm" onclick="editCoach('${esc(c.id)}')">Edit</button></td></tr>`;
+    }).join("");
+}
+
+function getBpjsMonthPayment(p){
+    if(p._type==="Coach") return getCoachBpjs(p.id);
+    ensureDuesForAthlete(p.id);
+    return db.dues[currentMonth][p.id];
+}
+
+function bpjsPaymentCell(p){
+    const d=getBpjsMonthPayment(p);
+    const paid=d.paid==="Sudah Bayar";
+    const amount=p._type==="Atlet"?rupiah(d.amount||0):(d.amount?rupiah(d.amount):"-");
+    return `${esc(amount)}<br><span class="badge ${paid?"badge-success":"badge-danger"}">${paid?"Sudah Bayar":"Belum Bayar"}</span>`;
+}
+
 function getActiveBpjsParticipants(){
     const athletes=getActiveAthletes().map(a=>Object.assign({_type:"Atlet"},a));
-    const coaches=getCoaches().filter(c=>c.status!=="Tidak Aktif").map(c=>Object.assign({_type:"Coach"},c));
+    const coaches=getCoaches().filter(c=>c.status!=="Tidak Aktif").map(c=>mapCoachForBpjs(c));
     return athletes.concat(coaches);
 }
 
@@ -948,11 +1094,11 @@ function renderBPJS(){
     renderBpjsParticipantTable();
     const participants=getActiveBpjsParticipants();
     const statuses=participants.map(bpjsDerivedStatus);
-    const paidAthletes=getPaidBpjsAthletes();
-    const paidCoaches=getBpjsPaidCoaches();
-    const allNew=allBpjsNewExportList();
-    const allRenew=allBpjsRenewExportList();
-    const incompleteAll=allBpjsPaidIncomplete();
+    const allNewDisplay=participants.filter(p=>bpjsClassification(p)==="new");
+    const allRenewDisplay=participants.filter(p=>bpjsClassification(p)==="renew");
+    const incompleteDisplay=participants.filter(p=>bpjsClassification(p)==="incomplete");
+    const allNewExport=allBpjsNewExportList();
+    const allRenewExport=allBpjsRenewExportList();
 
     document.getElementById("bpjsTotalCount").textContent=participants.length;
     document.getElementById("bpjsActiveCount").textContent=statuses.filter(x=>x==="Aktif").length;
@@ -963,48 +1109,49 @@ function renderBPJS(){
     renderCoaches();
     renderBpjsSettings();
 
-    document.getElementById("bpjsNewNotice").innerHTML=allNew.length
-        ? `Ada <b>${allNew.length}</b> peserta (atlet + coach) siap untuk Pendaftaran Baru pada ${esc(monthLabel(currentMonth))}.`
-        : `Belum ada peserta Pendaftaran Baru yang sudah lunas pada ${esc(monthLabel(currentMonth))}.`;
-    document.getElementById("bpjsRenewNotice").innerHTML=allRenew.length
-        ? `Ada <b>${allRenew.length}</b> peserta (atlet + coach) siap untuk Perpanjangan pada ${esc(monthLabel(currentMonth))}.`
-        : `Belum ada peserta Perpanjangan yang sudah lunas pada ${esc(monthLabel(currentMonth))}.`;
+    document.getElementById("bpjsNewNotice").innerHTML=allNewDisplay.length
+        ? `Menampilkan <b>${allNewDisplay.length}</b> peserta kategori pendaftaran baru. Dari jumlah itu, <b>${allNewExport.length}</b> sudah lunas dan akan masuk export bulan ${esc(monthLabel(currentMonth))}.`
+        : `Belum ada peserta aktif kategori pendaftaran baru (NIK diisi, EXP dikosongkan).`;
+    document.getElementById("bpjsRenewNotice").innerHTML=allRenewDisplay.length
+        ? `Menampilkan <b>${allRenewDisplay.length}</b> peserta kategori perpanjangan. Dari jumlah itu, <b>${allRenewExport.length}</b> sudah lunas dan akan masuk export bulan ${esc(monthLabel(currentMonth))}.`
+        : `Belum ada peserta aktif kategori perpanjangan (NIK dan EXP sudah diisi).`;
 
     const newTb=document.getElementById("bpjsNewTable");
-    newTb.innerHTML=allNew.length?allNew.map((p,i)=>{
+    newTb.innerHTML=allNewDisplay.length?allNewDisplay.map((p,i)=>{
         const b=getParticipantBpjs(p);
-        const d=p._type==="Atlet"?db.dues[currentMonth][p.id]:getCoachBpjs(p.id);
-        const complete=!!b.dob && !!b.phone;
+        const complete=!!b.dob&&!!b.phone;
         return `<tr><td>${i+1}</td><td><b>${esc(p.name)}</b><br><small>${esc(p._type)}</small></td>
             <td>${esc(b.nik)}</td><td>${esc(formatDate(b.dob)||"-")}</td><td>${esc(formatBpjsPhone(b.phone)||"-")}</td>
-            <td><span class="badge ${complete?"badge-success":"badge-warning"}">${complete?"Lengkap":"Perlu dilengkapi"}</span></td><td>${rupiah(d.amount||0)}</td></tr>`;
-    }).join(""): `<tr><td colspan="7" class="empty">Tidak ada peserta pendaftaran baru.</td></tr>`;
+            <td><span class="badge ${complete?"badge-success":"badge-warning"}">${complete?"Lengkap":"Perlu dilengkapi"}</span></td>
+            <td>${bpjsPaymentCell(p)}</td></tr>`;
+    }).join(""):`<tr><td colspan="7" class="empty">Belum ada peserta kategori pendaftaran baru.</td></tr>`;
 
     const renewTb=document.getElementById("bpjsRenewTable");
-    renewTb.innerHTML=allRenew.length?allRenew.map((p,i)=>{
+    renewTb.innerHTML=allRenewDisplay.length?allRenewDisplay.map((p,i)=>{
         const b=getParticipantBpjs(p);
-        const d=p._type==="Atlet"?db.dues[currentMonth][p.id]:getCoachBpjs(p.id);
         const st=bpjsExpiryStatus(b.exp);
         return `<tr><td>${i+1}</td><td><b>${esc(p.name)}</b><br><small>${esc(p._type)}</small></td>
             <td>${esc(b.nik)}</td><td>${esc(formatDate(b.exp))}</td>
-            <td><span class="badge ${st.cls}">${esc(st.label)}${st.days!=null?` (${st.days} hari)`:""}</span></td><td>${rupiah(d.amount||0)}</td></tr>`;
-    }).join(""): `<tr><td colspan="6" class="empty">Tidak ada peserta perpanjangan.</td></tr>`;
+            <td><span class="badge ${st.cls}">${esc(st.label)}${st.days!=null?` (${st.days} hari)`:""}</span></td>
+            <td>${bpjsPaymentCell(p)}</td></tr>`;
+    }).join(""):`<tr><td colspan="6" class="empty">Belum ada peserta kategori perpanjangan.</td></tr>`;
 
     const incTb=document.getElementById("bpjsIncompleteTable");
-    incTb.innerHTML=incompleteAll.length?incompleteAll.map((p,i)=>{
+    incTb.innerHTML=incompleteDisplay.length?incompleteDisplay.map((p,i)=>{
         const b=getParticipantBpjs(p);
-        const d=p._type==="Atlet"?db.dues[currentMonth][p.id]:getCoachBpjs(p.id);
         const parent=p._type==="Atlet"?p.parent||"-":"Coach";
         const action=p._type==="Atlet"?`editAthlete('${esc(p.id)}')`:`editCoach('${esc(p.id)}')`;
-        return `<tr><td>${i+1}</td><td><b>${esc(p.name)}</b></td><td>${esc(parent)}</td>
-            <td><span class="badge badge-warning">Belum diisi</span></td><td>${esc(formatDate(b.exp)||"-")}</td><td>${rupiah(d.amount||0)}</td>
+        return `<tr><td>${i+1}</td><td><b>${esc(p.name)}</b><br><small>${esc(p._type)}</small></td>
+            <td>${esc(parent)}</td><td><span class="badge badge-warning">Belum diisi</span></td>
+            <td>${esc(formatDate(b.exp)||"-")}</td><td>${bpjsPaymentCell(p)}</td>
             <td><button class="btn btn-secondary btn-sm" onclick="${action}">Isi NIK</button></td></tr>`;
-    }).join(""): `<tr><td colspan="7" class="empty">Semua peserta yang lunas bulan ini sudah memiliki NIK.</td></tr>`;
+    }).join(""):`<tr><td colspan="7" class="empty">Semua peserta aktif sudah memiliki NIK.</td></tr>`;
 
-    // Menunjukkan peserta lunas untuk transparansi: atlet + coach.
+    const paidAthletes=getPaidBpjsAthletes();
+    const paidCoaches=getBpjsPaidCoaches();
     const paidTotal=paidAthletes.length+paidCoaches.length;
     const paidNote=document.getElementById("bpjsPaidNote");
-    if(paidNote)paidNote.textContent=`${paidTotal} peserta sudah ditandai lunas BPJS untuk ${monthLabel(currentMonth)}.`;
+    if(paidNote)paidNote.textContent=`${paidTotal} peserta ditandai Sudah Bayar untuk ${monthLabel(currentMonth)}; hanya mereka yang ikut export.`;
 }
 
 function renderAthletes(){
@@ -1258,6 +1405,13 @@ function terbilang(n){
         return String(x);
     }
     return (t(n)||"nol").replace(/\s+/g," ").trim()+" rupiah";
+}
+
+function formatDate(v){
+    if(!v)return "";
+    const p=String(v).split("-");
+    if(p.length===3 && p[0].length===4)return `${p[2]}-${p[1]}-${p[0]}`;
+    return String(v);
 }
 
 function fmtDate(v){
@@ -1645,6 +1799,326 @@ function handleExcel(e){
     };
 
     reader.readAsArrayBuffer(file);
+}
+
+/* ============================
+   IMPORT DATA BPJS KE ATLET YANG SUDAH ADA
+   Tidak pernah membuat record atlet baru.
+   ============================ */
+let bpjsImportRows = [];
+let bpjsImportFileName = "";
+let bpjsImportIgnoredEmpty = 0;
+
+function importNormalizeName(value){
+    return String(value ?? "")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\([^)]*\)/g, " ")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim().replace(/\s+/g, " ");
+}
+
+function importNormalizeAthleteNo(value){
+    const clean=cleanNra(value);
+    if(!clean)return "";
+    const n=String(clean).toUpperCase().replace(/[^A-Z0-9]/g, "");
+    return n==="NRA" ? "" : n;
+}
+
+function importNIK(value){
+    if(value===null || value===undefined || value==="")return "";
+    return String(value).replace(/\D/g, "");
+}
+
+function importDateToISO(value){
+    if(value===null || value===undefined || value==="")return "";
+    if(value instanceof Date && !Number.isNaN(value.getTime())){
+        return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,"0")}-${String(value.getDate()).padStart(2,"0")}`;
+    }
+    if(typeof value==="number" && value>20000 && value<80000 && typeof XLSX!=="undefined"){
+        const parsed=XLSX.SSF.parse_date_code(value);
+        if(parsed && parsed.y && parsed.m && parsed.d){
+            return `${parsed.y}-${String(parsed.m).padStart(2,"0")}-${String(parsed.d).padStart(2,"0")}`;
+        }
+    }
+    const v=String(value).trim();
+    let m=v.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+    if(m)return `${m[1]}-${String(m[2]).padStart(2,"0")}-${String(m[3]).padStart(2,"0")}`;
+    m=v.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+    if(m)return `${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;
+    // Jangan menafsirkan teks seperti "Atlet Baru" / "Expired OKTOBER" sebagai tanggal.
+    return "";
+}
+
+function importLevenshteinRatio(a,b){
+    if(!a || !b)return 0;
+    const rows=Array.from({length:a.length+1},()=>new Array(b.length+1).fill(0));
+    for(let i=0;i<=a.length;i++)rows[i][0]=i;
+    for(let j=0;j<=b.length;j++)rows[0][j]=j;
+    for(let i=1;i<=a.length;i++){
+        for(let j=1;j<=b.length;j++){
+            const cost=a[i-1]===b[j-1]?0:1;
+            rows[i][j]=Math.min(rows[i-1][j]+1,rows[i][j-1]+1,rows[i-1][j-1]+cost);
+        }
+    }
+    return 1-rows[a.length][b.length]/Math.max(a.length,b.length);
+}
+
+function importNameSimilarity(a,b){
+    const na=importNormalizeName(a), nb=importNormalizeName(b);
+    if(!na || !nb)return 0;
+    const lev=importLevenshteinRatio(na,nb);
+    const ta=new Set(na.split(" ").filter(x=>x.length>1));
+    const tb=new Set(nb.split(" ").filter(x=>x.length>1));
+    const inter=[...ta].filter(x=>tb.has(x)).length;
+    const union=new Set([...ta,...tb]).size || 1;
+    const jac=inter/union;
+    return Math.max(lev, jac);
+}
+
+function findRosterMatch(source, athletes){
+    const noKey=importNormalizeAthleteNo(source.athleteNo);
+    if(noKey){
+        const byNo=athletes.filter(a=>importNormalizeAthleteNo(a.nra)===noKey);
+        if(byNo.length===1)return {targetId:byNo[0].id,kind:"match-no",label:"Cocok: nomor atlet",suggestedId:byNo[0].id,score:1};
+        if(byNo.length>1)return {targetId:"",kind:"ambiguous-no",label:"Nomor atlet duplikat di database",suggestedId:"",score:1};
+    }
+    const nameKey=importNormalizeName(source.name);
+    const byName=athletes.filter(a=>importNormalizeName(a.name)===nameKey);
+    if(byName.length===1)return {targetId:byName[0].id,kind:"match-name",label:"Cocok: nama",suggestedId:byName[0].id,score:1};
+    if(byName.length>1)return {targetId:"",kind:"ambiguous-name",label:"Nama sama — pilih manual",suggestedId:"",score:1};
+
+    let best=null, second=0;
+    for(const a of athletes){
+        const score=importNameSimilarity(source.name,a.name);
+        if(!best || score>best.score){second=best?best.score:second;best={id:a.id,name:a.name,score};}
+        else if(score>second)second=score;
+    }
+    if(best && best.score>=0.64){
+        return {targetId:"",kind:"suggestion",label:`Mirip: ${best.name} (${Math.round(best.score*100)}%) — cek manual`,suggestedId:best.id,score:best.score};
+    }
+    return {targetId:"",kind:"unmatched",label:"Tidak ditemukan — tidak akan ditambahkan",suggestedId:"",score:0};
+}
+
+function handleBpjsRosterImport(event){
+    const file=event.target.files && event.target.files[0];
+    if(!file)return;
+    if(!isDataLoaded || !Array.isArray(db.athletes)){
+        alert("Data database atlet belum selesai dimuat. Tunggu sampai data atlet tampil, lalu pilih file lagi.");
+        event.target.value="";
+        return;
+    }
+    if(typeof XLSX==="undefined"){
+        alert("Library Excel belum termuat. Pastikan komputer terhubung internet, lalu coba lagi.");
+        event.target.value="";
+        return;
+    }
+
+    const reader=new FileReader();
+    reader.onload=function(e){
+        try{
+            const wb=XLSX.read(e.target.result,{type:"array",cellDates:true});
+            const sheetName=wb.SheetNames.find(n=>importNormalizeName(n)==="master data");
+            if(!sheetName)throw new Error('Sheet "MASTER DATA" tidak ditemukan.');
+            const ws=wb.Sheets[sheetName];
+            const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:true});
+            let headerRow=-1, cols={};
+
+            for(let r=0;r<Math.min(raw.length,10);r++){
+                const h=raw[r].map(v=>normalize(v));
+                const cName=h.findIndex(v=>v==="nama" || v==="namalengkap");
+                const cNo=h.findIndex(v=>v.includes("noofficialatlet") || v==="nra" || v.includes("nomoratlet"));
+                const cNik=h.findIndex(v=>v.includes("nomoridentitas") || v==="nik");
+                const cExp=h.findIndex(v=>v.includes("jatohtempo") || v.includes("jatuhtempo") || v.includes("expired") || v.includes("expbpjs"));
+                if(cName>=0 && (cNo>=0 || cNik>=0) && cExp>=0){
+                    headerRow=r;
+                    cols={name:cName,no:cNo,nik:cNik,exp:cExp};
+                    break;
+                }
+            }
+            if(headerRow<0)throw new Error("Header NAMA, NOMOR IDENTITAS, dan JATOH/JATUH TEMPO BPJS TK tidak ditemukan.");
+
+            const athletes=db.athletes.slice();
+            const imported=[];
+            let ignoredEmpty=0;
+            for(let r=headerRow+1;r<raw.length;r++){
+                const row=raw[r];
+                const name=String(row[cols.name]??"").trim();
+                if(!name || name.toLowerCase()==="nama"){ignoredEmpty++;continue;}
+                const athleteNo=cols.no>=0?String(row[cols.no]??"").trim():"";
+                const nikRaw=cols.nik>=0?row[cols.nik]:"";
+                const nikDigits=importNIK(nikRaw);
+                const nik=nikDigits.length===16?nikDigits:"";
+                const exp=importDateToISO(row[cols.exp]);
+                // Nama tanpa nomor, NIK, dan EXP tidak perlu ikut preview.
+                if(!importNormalizeAthleteNo(athleteNo) && !nikDigits && !exp){ignoredEmpty++;continue;}
+                const match=findRosterMatch({name,athleteNo},athletes);
+                imported.push({
+                    sourceRow:r+1,athleteNo,name,
+                    nik,nikDigits,nikValid:!nikDigits || nikDigits.length===16,
+                    exp, rawExp:String(row[cols.exp]??"").trim(),
+                    targetId:match.targetId,kind:match.kind,label:match.label,
+                    suggestedId:match.suggestedId,score:match.score
+                });
+            }
+
+            bpjsImportRows=imported;
+            bpjsImportFileName=file.name;
+            bpjsImportIgnoredEmpty=ignoredEmpty;
+            renderBpjsImportPreview();
+        }catch(err){
+            document.getElementById("bpjsImportSummary").innerHTML=`<div class="warning-box"><b>Import gagal:</b> ${esc(err.message)}</div>`;
+            document.getElementById("bpjsImportPreviewWrap").style.display="none";
+            document.getElementById("bpjsImportActions").style.display="none";
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function renderBpjsImportPreview(fileName=bpjsImportFileName,ignoredEmpty=bpjsImportIgnoredEmpty){
+    if(fileName)bpjsImportFileName=fileName;
+    if(Number.isFinite(ignoredEmpty))bpjsImportIgnoredEmpty=ignoredEmpty;
+    fileName=bpjsImportFileName;
+    ignoredEmpty=bpjsImportIgnoredEmpty;
+    const athletes=db.athletes.slice().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"id"));
+    const exactNo=bpjsImportRows.filter(r=>r.kind==="match-no").length;
+    const exactName=bpjsImportRows.filter(r=>r.kind==="match-name").length;
+    const needsReview=bpjsImportRows.filter(r=>!r.targetId).length;
+    const invalidNik=bpjsImportRows.filter(r=>r.nikDigits && !r.nikValid).length;
+    const mapped=bpjsImportRows.filter(r=>r.targetId).length;
+
+    document.getElementById("bpjsImportSummary").innerHTML=`<div class="notice">
+        File: <b>${esc(fileName)}</b><br>
+        Baris bermakna terbaca: <b>${bpjsImportRows.length}</b> · Cocok nomor atlet: <b>${exactNo}</b> · Cocok nama: <b>${exactName}</b> · Perlu dicek/dipasangkan manual: <b>${needsReview}</b> · NIK bukan 16 digit: <b>${invalidNik}</b><br>
+        Data kosong/diabaikan: <b>${ignoredEmpty}</b>. Baris tidak cocok tidak masuk ke database kecuali lo pilih secara manual atlet tujuan yang memang sudah ada.
+    </div>`;
+
+    const tb=document.getElementById("bpjsImportPreviewTable");
+    tb.innerHTML=bpjsImportRows.length?bpjsImportRows.map((r,i)=>{
+        const statusClass=r.kind==="match-no"||r.kind==="match-name"?"badge-success":r.kind==="suggestion"||r.kind.startsWith("ambiguous")?"badge-warning":"badge-gray";
+        const optionList=athletes.map(a=>`<option value="${esc(a.id)}" ${r.targetId===a.id?"selected":""}>${esc(a.name)}${a.nra?" — "+esc(a.nra):""}</option>`).join("");
+        const nikDisplay=r.nikDigits?esc(r.nikDigits):"-";
+        const nikWarn=r.nikDigits&&!r.nikValid?`<br><span class="badge badge-danger">${r.nikDigits.length} digit — NIK tidak akan diimpor</span>`:"";
+        const expDisplay=r.exp?esc(formatDate(r.exp)):(r.rawExp?`<span class="badge badge-gray">Bukan tanggal: ${esc(r.rawExp)}</span>`:"-");
+        const noDisplay=r.athleteNo && importNormalizeAthleteNo(r.athleteNo)?esc(r.athleteNo):"-";
+        return `<tr>
+            <td>${i+1}</td><td>${noDisplay}</td><td><b>${esc(r.name)}</b></td>
+            <td>${nikDisplay}${nikWarn}</td><td>${expDisplay}</td>
+            <td><span class="badge ${statusClass}">${esc(r.label)}</span></td>
+            <td><select class="form-control" style="min-width:300px" onchange="setBpjsImportTarget(${i},this.value)">
+                <option value="">— Jangan impor baris ini —</option>${optionList}
+            </select></td>
+        </tr>`;
+    }).join(""):`<tr><td colspan="7" class="empty">Tidak ada baris yang dapat diproses.</td></tr>`;
+
+    document.getElementById("bpjsImportPreviewWrap").style.display=bpjsImportRows.length?"block":"none";
+    document.getElementById("bpjsImportActions").style.display=bpjsImportRows.length?"flex":"none";
+}
+
+function setBpjsImportTarget(index,targetId){
+    if(!bpjsImportRows[index])return;
+    bpjsImportRows[index].targetId=targetId||"";
+    if(targetId){
+        const target=db.athletes.find(a=>a.id===targetId);
+        if(target){
+            const sourceNo=importNormalizeAthleteNo(bpjsImportRows[index].athleteNo);
+            const targetNo=importNormalizeAthleteNo(target.nra);
+            if(sourceNo && targetNo===sourceNo){
+                bpjsImportRows[index].kind="manual-no";
+                bpjsImportRows[index].label="Dipilih manual — nomor sama";
+            }else if(importNormalizeName(target.name)===importNormalizeName(bpjsImportRows[index].name)){
+                bpjsImportRows[index].kind="manual-name";
+                bpjsImportRows[index].label="Dipilih manual — nama sama";
+            }else{
+                bpjsImportRows[index].kind="manual";
+                bpjsImportRows[index].label="Dipilih manual — konfirmasi nama";
+            }
+        }
+    }else{
+        const match=findRosterMatch(bpjsImportRows[index],db.athletes);
+        bpjsImportRows[index].kind=match.kind;
+        bpjsImportRows[index].label=match.label;
+    }
+    renderBpjsImportPreview();
+}
+
+function clearBpjsImportPreview(){
+    bpjsImportRows=[];
+    bpjsImportFileName="";
+    bpjsImportIgnoredEmpty=0;
+    document.getElementById("bpjsImportFile").value="";
+    document.getElementById("bpjsImportSummary").innerHTML="";
+    document.getElementById("bpjsImportPreviewTable").innerHTML="";
+    document.getElementById("bpjsImportPreviewWrap").style.display="none";
+    document.getElementById("bpjsImportActions").style.display="none";
+}
+
+function applyBpjsImport(){
+    if(!isDataLoaded){alert("Database belum selesai dimuat.");return;}
+    if(!bpjsImportRows.length){alert("Pilih file Excel dan periksa hasil pencocokan terlebih dahulu.");return;}
+
+    const selected=bpjsImportRows.filter(r=>r.targetId);
+    if(!selected.length){alert("Belum ada baris yang dipasangkan ke atlet database. Tidak ada perubahan.");return;}
+
+    const targetCounts={};
+    selected.forEach(r=>targetCounts[r.targetId]=(targetCounts[r.targetId]||0)+1);
+    const duplicateTargets=Object.keys(targetCounts).filter(id=>targetCounts[id]>1);
+    if(duplicateTargets.length){
+        const names=duplicateTargets.map(id=>db.athletes.find(a=>a.id===id)?.name||id).join(", ");
+        alert("Ada lebih dari satu baris Excel yang dipasangkan ke atlet yang sama: "+names+". Batalkan pilihan duplikat sebelum menerapkan.");
+        return;
+    }
+
+    const applyRows=selected.filter(r=>r.nik || r.exp || (r.athleteNo && !db.athletes.find(a=>a.id===r.targetId)?.nra));
+    if(!applyRows.length){alert("Tidak ada data nomor atlet, NIK valid, atau tanggal EXP yang bisa diterapkan.");return;}
+    const invalidCount=selected.filter(r=>r.nikDigits && !r.nikValid).length;
+    const noDataCount=selected.length-applyRows.length;
+    const confirmMsg=`Akan memperbarui ${applyRows.length} atlet yang SUDAH ADA di database.\n\nTidak ada atlet baru yang ditambahkan.\nNIK yang bukan 16 digit akan dilewati: ${invalidCount}.\nBaris tanpa data valid yang dilewati: ${noDataCount}.\n\nLanjutkan?`;
+    if(!confirm(confirmMsg))return;
+
+    let updatedAthletes=0, updatedNik=0, updatedExp=0, updatedNra=0, skippedInvalidNik=0, unchanged=0;
+    const changedIds=new Set();
+
+    applyRows.forEach(r=>{
+        const a=db.athletes.find(x=>x.id===r.targetId);
+        if(!a)return;
+        let changed=false;
+
+        // Nomor atlet diisi hanya jika nomor pada database masih kosong. Tidak menimpa nomor yang sudah ada.
+        if(r.athleteNo && importNormalizeAthleteNo(r.athleteNo) && !importNormalizeAthleteNo(a.nra)){
+            a.nra=String(r.athleteNo).trim();
+            updatedNra++;changed=true;
+        }
+
+        // Hanya update NIK bila 16 digit; nilai kosong/tidak valid tidak menimpa data lama.
+        if(r.nik){
+            const current=getParticipantBpjs(a);
+            if(current.nik!==r.nik){current.nik=r.nik;setParticipantBpjs(a,current);updatedNik++;changed=true;}
+        }else if(r.nikDigits && !r.nikValid){
+            skippedInvalidNik++;
+        }
+
+        // Hanya tanggal EXP valid yang diimpor; teks seperti "Atlet Baru" tidak menghapus tanggal lama.
+        if(r.exp){
+            const current=getParticipantBpjs(a);
+            if(current.exp!==r.exp){current.exp=r.exp;setParticipantBpjs(a,current);updatedExp++;changed=true;}
+        }
+
+        if(changed)changedIds.add(a.id); else unchanged++;
+    });
+
+    saveDB();
+    renderAll();
+    document.getElementById("bpjsImportSummary").innerHTML=`<div class="success-box">
+        <b>Import selesai.</b><br>
+        Atlet yang berubah: <b>${changedIds.size}</b><br>
+        Nomor atlet diisi karena sebelumnya kosong: <b>${updatedNra}</b><br>
+        NIK diperbarui: <b>${updatedNik}</b><br>
+        EXP diperbarui: <b>${updatedExp}</b><br>
+        NIK tidak valid yang dilewati: <b>${skippedInvalidNik}</b><br>
+        Baris tanpa perubahan: <b>${unchanged}</b><br>
+        <b>Tidak ada nama/atlet baru yang ditambahkan.</b>
+    </div>`;
 }
 
 /* ============================
