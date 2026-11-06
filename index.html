@@ -123,6 +123,21 @@ tr:last-child td{border-bottom:0}
 @media(max-width:900px){.attendance-summary{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.attendance-summary{grid-template-columns:1fr}}
 
+.subsection{margin-top:18px}
+tfoot th{background:#eef5fa;font-size:12px}
+@media print{
+    body{background:#fff}
+    .sidebar,.topbar,.nav,.toolbar{display:none!important}
+    .main{margin:0!important;padding:0!important;width:100%!important}
+    .page{display:none!important}
+    #finance.page.active{display:block!important}
+    .card{box-shadow:none;border:0;padding:8px}
+    .table-wrap{overflow:visible;border:1px solid #ccc}
+    table{min-width:0!important;width:100%}
+    th,td{font-size:9px;padding:6px}
+    .cards{grid-template-columns:repeat(4,1fr)}
+    .card-value{font-size:17px}
+}
 @media(max-width:1100px){
     .cards{grid-template-columns:repeat(2,1fr)}
     .bpjs-status-grid{grid-template-columns:repeat(3,1fr)}
@@ -141,14 +156,45 @@ tr:last-child td{border-bottom:0}
     .form-grid{grid-template-columns:1fr}
     .topbar{align-items:flex-start;gap:10px;flex-direction:column}
 }
+
+/* LOGIN PENGURUS */
+#loginGate{position:fixed;inset:0;z-index:9999;background:#f4f7fb;display:flex;align-items:center;justify-content:center;padding:20px}
+#loginGate[hidden]{display:none!important}
+.login-card{width:min(420px,100%);background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:0 10px 35px rgba(15,23,42,.08)}
+.login-card h2{margin:0 0 8px;color:var(--primary)}
+.login-card p{font-size:13px;color:var(--muted);line-height:1.5}
+.login-card label{display:block;font-size:12px;font-weight:700;margin:14px 0 6px}
+.login-card input{width:100%;padding:12px;border:1px solid var(--border);border-radius:8px}
+.login-card button{width:100%;margin-top:18px}
+#loginMessage{font-size:12px;color:#b4232f;margin-top:12px;min-height:18px}
+#logoutBtn{border:1px solid var(--border);background:#fff;color:#475569;border-radius:7px;padding:7px 10px;font-size:11px;cursor:pointer}
+
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 
 <body>
-<div class="app">
+
+<div id="loginGate">
+  <div class="login-card">
+    <div style="font-size:32px">🏀</div>
+    <h2>NAGARAJA</h2>
+    <p>Club Management — Login Pengurus</p>
+    <form id="loginForm">
+      <label for="loginEmail">Email pengurus</label>
+      <input id="loginEmail" type="email" autocomplete="username" required placeholder="email pengurus">
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Password">
+      <button class="btn btn-primary" id="loginSubmit" type="submit">Masuk ke Dashboard</button>
+    </form>
+    <div id="loginMessage" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<div class="app" id="nagarajaApp" style="display:none">
 
 <aside class="sidebar">
     <div class="brand">🏀 NAGARAJA<small>Basketball Club Management</small></div>
@@ -156,6 +202,7 @@ tr:last-child td{border-bottom:0}
         <button class="active" data-page="dashboard">📊 <span>Dashboard</span></button>
         <button data-page="athletes">👥 <span>Data Atlet</span></button>
         <button data-page="dues">💰 <span>Iuran Bulanan</span></button>
+        <button data-page="finance">📈 <span>Laporan Keuangan</span></button>
         <button data-page="import">📥 <span>Import Excel</span></button>
         <button data-page="followup">📋 <span>Follow Up</span></button>
         <button data-page="attendance">🏀 <span>Absensi Atlet</span></button>
@@ -171,7 +218,8 @@ tr:last-child td{border-bottom:0}
             <div class="subtitle">Sistem administrasi iuran atlet</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">
-            <span id="firebaseStatus" role="status" aria-live="polite" style="font-size:11px;color:#64748b">Menghubungkan ke Firebase…</span>
+            <span id="firebaseStatus" role="status" aria-live="polite" style="font-size:11px;color:#64748b">Menunggu login…</span>
+            <button id="logoutBtn" type="button" onclick="logoutAdmin()">Keluar</button>
             <select id="globalMonth" class="month-select"></select>
         </div>
     </div>
@@ -254,6 +302,42 @@ tr:last-child td{border-bottom:0}
                     <tbody id="duesTable"></tbody>
                 </table>
             </div>
+        </div>
+    </section>
+
+    <!-- LAPORAN KEUANGAN -->
+    <section id="finance" class="page">
+        <div class="cards">
+            <div class="card"><div class="card-label">TOTAL PEMBAYARAN MASUK</div><div class="card-value" id="finPaidTotal">Rp0</div><div class="card-note" id="finPaidCount">0 atlet sudah bayar</div></div>
+            <div class="card"><div class="card-label">TOTAL PIUTANG</div><div class="card-value" id="finReceivableTotal">Rp0</div><div class="card-note" id="finReceivableCount">0 atlet belum bayar</div></div>
+            <div class="card"><div class="card-label">TOTAL TAGIHAN</div><div class="card-value" id="finBillTotal">Rp0</div><div class="card-note">Pembayaran masuk + piutang</div></div>
+            <div class="card"><div class="card-label">ATLET DI LUAR TAGIHAN</div><div class="card-value" id="finExcludedCount">0</div><div class="card-note">Cuti, pemutihan, kompensasi, dan status khusus lainnya</div></div>
+        </div>
+        <div class="card">
+            <div class="section-title">📈 Laporan Keuangan Bulanan — <span id="finMonthLabel"></span></div>
+            <div class="notice">Laporan dihitung dari data iuran atlet pada bulan yang dipilih di bagian atas. Pembayaran masuk dihitung dari status <b>Sudah Bayar</b>. Piutang dihitung dari status <b>Belum Bayar</b> dengan breakdown <b>Belum Bayar</b>. Status khusus seperti Cuti, Pemutihan, dan Kompensasi tidak dimasukkan ke piutang.</div>
+            <div class="toolbar">
+                <button class="btn btn-success" type="button" onclick="exportFinanceExcel()">📊 Export Laporan Excel</button>
+                <button class="btn btn-secondary" type="button" onclick="printFinanceReport()">🖨️ Cetak Laporan</button>
+            </div>
+            <div class="section-title subsection">A. Pembayaran Diterima</div>
+            <div class="table-wrap">
+                <table><thead><tr><th>No</th><th>NRA</th><th>Nama Atlet</th><th>Tanggal Bayar</th><th>Metode</th><th>Nominal Diterima</th></tr></thead>
+                <tbody id="finPaidTable"></tbody>
+                <tfoot><tr><th colspan="5" style="text-align:right">TOTAL PEMBAYARAN MASUK</th><th id="finPaidFoot">Rp0</th></tr></tfoot></table>
+            </div>
+            <div class="section-title subsection">B. Piutang Atlet / Belum Membayar</div>
+            <div class="table-wrap">
+                <table><thead><tr><th>No</th><th>NRA</th><th>Nama Atlet</th><th>Nominal Piutang</th></tr></thead>
+                <tbody id="finReceivableTable"></tbody>
+                <tfoot><tr><th colspan="3" style="text-align:right">TOTAL PIUTANG</th><th id="finReceivableFoot">Rp0</th></tr></tfoot></table>
+            </div>
+            <div class="section-title subsection">C. Status Khusus / Tidak Dihitung sebagai Piutang</div>
+            <div class="table-wrap">
+                <table><thead><tr><th>No</th><th>NRA</th><th>Nama Atlet</th><th>Breakdown</th><th>Nominal Data</th></tr></thead>
+                <tbody id="finExcludedTable"></tbody>
+            </table></div>
+            <div class="notice" style="margin-top:14px;margin-bottom:0"><b>Catatan:</b> Laporan ini adalah rekap iuran atlet, bukan laporan seluruh kas klub. Pengeluaran klub, saldo awal, dan pemasukan lain belum dicatat dalam aplikasi.</div>
         </div>
     </section>
 
@@ -703,6 +787,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
+const auth = firebase.auth();
 
 let db = { athletes: [], dues: {}, coaches: {}, coachBpjs: {} };
 let currentMonth = localStorage.getItem("nagarajaMonth") || "2026-09";
@@ -737,31 +822,37 @@ function saveDB(){
     });
 }
 
-database.ref("nagarajaDB").on("value", (snapshot) => {
-    const data = snapshot.val();
-    if(data){
-        db = data;
-        if(!db.athletes) db.athletes = [];
-        if(!db.dues) db.dues = {};
-        if(!db.coaches) db.coaches = {};
-        if(!db.coachBpjs) db.coachBpjs = {};
-        if(!db.attendance) db.attendance = {};
-        if(!db.attendanceGroups) db.attendanceGroups = {};
-    }else{
-        db = { athletes: [], dues: {}, coaches: {}, coachBpjs: {}, attendance: {}, attendanceGroups: {} };
-    }
-    if(!db.bpjsConfig) db.bpjsConfig = getDefaultBpjsConfig();
-    isDataLoaded = true;
-    setFirebaseStatus("Data Firebase berhasil dimuat","success");
-    renderAll();
-}, (error) => {
-    console.error("Gagal membaca database Nagaraja dari Firebase:",error);
-    setFirebaseStatus("Gagal memuat data Firebase","error");
-    if(!firebaseLoadErrorShown){
-        firebaseLoadErrorShown=true;
-        alert("Data Firebase gagal dimuat. Aplikasi dikunci dari penyimpanan agar data kosong tidak menimpa database. Periksa koneksi internet atau izin akses Firebase, lalu muat ulang.");
-    }
-});
+let databaseListenerStarted = false;
+
+function startDatabaseListener(){
+    if(databaseListenerStarted) return;
+    databaseListenerStarted = true;
+    database.ref("nagarajaDB").on("value", (snapshot) => {
+        const data = snapshot.val();
+        if(data){
+            db = data;
+            if(!db.athletes) db.athletes = [];
+            if(!db.dues) db.dues = {};
+            if(!db.coaches) db.coaches = {};
+            if(!db.coachBpjs) db.coachBpjs = {};
+            if(!db.attendance) db.attendance = {};
+            if(!db.attendanceGroups) db.attendanceGroups = {};
+        }else{
+            db = { athletes: [], dues: {}, coaches: {}, coachBpjs: {}, attendance: {}, attendanceGroups: {} };
+        }
+        if(!db.bpjsConfig) db.bpjsConfig = getDefaultBpjsConfig();
+        isDataLoaded = true;
+        setFirebaseStatus("Data Firebase berhasil dimuat","success");
+        renderAll();
+    }, (error) => {
+        console.error("Gagal membaca database Nagaraja dari Firebase:",error);
+        setFirebaseStatus("Gagal memuat data Firebase","error");
+        if(!firebaseLoadErrorShown){
+            firebaseLoadErrorShown=true;
+            alert("Data Firebase gagal dimuat. Aplikasi dikunci dari penyimpanan agar data kosong tidak menimpa database. Periksa Rules dan koneksi internet, lalu muat ulang.");
+        }
+    });
+}
 
 function rupiah(n){
     return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
@@ -835,7 +926,63 @@ function renderBpjsSettings(){
     });
 }
 
+
+function showLogin(message=""){
+    document.getElementById("loginGate").hidden = false;
+    document.getElementById("nagarajaApp").style.display = "none";
+    document.getElementById("loginMessage").textContent = message;
+    setFirebaseStatus("Menunggu login…","normal");
+}
+
+function showDashboardForUser(user){
+    if(!user) return;
+    document.getElementById("loginGate").hidden = true;
+    document.getElementById("nagarajaApp").style.display = "flex";
+    setFirebaseStatus("Login berhasil, memuat data…","pending");
+    startDatabaseListener();
+}
+
+async function loginAdmin(event){
+    event.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const button = document.getElementById("loginSubmit");
+    const message = document.getElementById("loginMessage");
+    button.disabled = true;
+    button.textContent = "Memeriksa akun…";
+    message.textContent = "";
+    try{
+        await auth.signInWithEmailAndPassword(email,password);
+    }catch(error){
+        console.error("Login pengurus gagal:",error);
+        const messages = {
+            "auth/invalid-email":"Format email tidak valid.",
+            "auth/user-not-found":"Akun pengurus tidak ditemukan.",
+            "auth/wrong-password":"Password salah.",
+            "auth/invalid-credential":"Email atau password salah.",
+            "auth/too-many-requests":"Terlalu banyak percobaan. Coba lagi beberapa saat."
+        };
+        message.textContent = messages[error.code] || "Login gagal. Periksa email, password, dan pengaturan Firebase Authentication.";
+    }finally{
+        button.disabled = false;
+        button.textContent = "Masuk ke Dashboard";
+    }
+}
+
+function logoutAdmin(){
+    if(!confirm("Keluar dari aplikasi Nagaraja?")) return;
+    isDataLoaded = false;
+    databaseListenerStarted = false;
+    database.ref("nagarajaDB").off();
+    auth.signOut().catch(error=>console.error("Gagal logout:",error));
+}
+
 function init(){
+    document.getElementById("loginForm").addEventListener("submit",loginAdmin);
+    auth.onAuthStateChanged(user=>{
+        if(user) showDashboardForUser(user);
+        else showLogin();
+    });
     const sel=document.getElementById("globalMonth");
     sel.innerHTML=MONTHS.map(m=>`<option value="${m.key}">${m.label}</option>`).join("");
     if(!MONTHS.some(m=>m.key===currentMonth)) currentMonth=MONTHS[0].key;
@@ -869,7 +1016,7 @@ function init(){
     document.getElementById("fBpjsExp")?.addEventListener("input",updateAthleteBpjsPreview);
     document.getElementById("excelFile").addEventListener("change",handleExcel);
 
-    renderAll();
+    // Tampilan data dirender setelah autentikasi dan data Firebase berhasil dimuat.
 }
 
 function showPage(page){
@@ -880,6 +1027,7 @@ function showPage(page){
         dashboard:"Dashboard",
         athletes:"Data Atlet",
         dues:"Iuran Bulanan",
+        finance:"Laporan Keuangan",
         import:"Import Excel",
         followup:"Follow Up",
         attendance:"Absensi Atlet",
@@ -919,6 +1067,7 @@ function renderAll(){
     renderDashboard();
     renderAthletes();
     renderDues();
+    renderFinanceReport();
     renderFollowup();
     renderReceipts();
     renderBPJS();
@@ -1354,6 +1503,112 @@ function renderDues(){
     }).join(""):`<tr><td colspan="9" class="empty">Belum ada data.</td></tr>`;
     // Simpan hanya ketika fungsi ini sendiri menambahkan data iuran default baru.
     if(createdDefaultDues)saveDB();
+}
+
+
+function getFinanceReportData(){
+    const paid=[], receivable=[], excluded=[];
+    getActiveAthletes().forEach(a=>{
+        const d=(db.dues && db.dues[currentMonth] && db.dues[currentMonth][a.id]) || {
+            amount:350000, paid:"Belum Bayar", breakdown:"Belum Bayar",
+            paidDate:"", method:""
+        };
+        const amount=Number(d.amount)||0;
+        const row={a,d,amount};
+        if(d.paid==="Sudah Bayar"){
+            paid.push(row);
+        }else if(d.paid==="Belum Bayar" && (d.breakdown||"Belum Bayar")==="Belum Bayar"){
+            receivable.push(row);
+        }else{
+            excluded.push(row);
+        }
+    });
+    const paidTotal=paid.reduce((sum,x)=>sum+x.amount,0);
+    const receivableTotal=receivable.reduce((sum,x)=>sum+x.amount,0);
+    return {paid,receivable,excluded,paidTotal,receivableTotal,billTotal:paidTotal+receivableTotal};
+}
+
+function renderFinanceReport(){
+    const ids=["finPaidTable","finReceivableTable","finExcludedTable"];
+    if(!ids.every(id=>document.getElementById(id)))return;
+    const r=getFinanceReportData();
+    document.getElementById("finMonthLabel").textContent=monthLabel(currentMonth);
+    document.getElementById("finPaidTotal").textContent=rupiah(r.paidTotal);
+    document.getElementById("finPaidCount").textContent=`${r.paid.length} atlet sudah bayar`;
+    document.getElementById("finReceivableTotal").textContent=rupiah(r.receivableTotal);
+    document.getElementById("finReceivableCount").textContent=`${r.receivable.length} atlet belum bayar`;
+    document.getElementById("finBillTotal").textContent=rupiah(r.billTotal);
+    document.getElementById("finExcludedCount").textContent=r.excluded.length;
+    document.getElementById("finPaidFoot").textContent=rupiah(r.paidTotal);
+    document.getElementById("finReceivableFoot").textContent=rupiah(r.receivableTotal);
+
+    document.getElementById("finPaidTable").innerHTML=r.paid.length?r.paid.map((x,i)=>`
+        <tr><td>${i+1}</td><td>${esc(x.a.nra||"-")}</td><td>${esc(x.a.name)}</td>
+        <td>${esc(x.d.paidDate||"-")}</td><td>${esc(x.d.method||"-")}</td><td>${rupiah(x.amount)}</td></tr>`).join("")
+        :`<tr><td colspan="6" class="empty">Belum ada pembayaran pada bulan ini.</td></tr>`;
+
+    document.getElementById("finReceivableTable").innerHTML=r.receivable.length?r.receivable.map((x,i)=>`
+        <tr><td>${i+1}</td><td>${esc(x.a.nra||"-")}</td><td>${esc(x.a.name)}</td><td>${rupiah(x.amount)}</td></tr>`).join("")
+        :`<tr><td colspan="4" class="empty">Tidak ada piutang pada bulan ini.</td></tr>`;
+
+    document.getElementById("finExcludedTable").innerHTML=r.excluded.length?r.excluded.map((x,i)=>`
+        <tr><td>${i+1}</td><td>${esc(x.a.nra||"-")}</td><td>${esc(x.a.name)}</td><td>${esc(x.d.breakdown||x.d.paid||"Status khusus")}</td><td>${rupiah(x.amount)}</td></tr>`).join("")
+        :`<tr><td colspan="5" class="empty">Tidak ada status khusus.</td></tr>`;
+}
+
+function exportFinanceExcel(){
+    if(typeof XLSX==="undefined"){alert("Library Excel belum termuat. Pastikan internet aktif lalu buka ulang aplikasi.");return;}
+    const r=getFinanceReportData();
+    const wb=XLSX.utils.book_new();
+    const summary=[
+        ["LAPORAN KEUANGAN IURAN ATLET NAGARAJA BASKETBALL"],
+        [`Periode: ${monthLabel(currentMonth)}`],
+        [],
+        ["Ringkasan","Jumlah"],
+        ["Total Pembayaran Masuk",r.paidTotal],
+        ["Jumlah Atlet Sudah Bayar",r.paid.length],
+        ["Total Piutang",r.receivableTotal],
+        ["Jumlah Atlet Belum Bayar",r.receivable.length],
+        ["Total Tagihan (masuk + piutang)",r.billTotal],
+        ["Atlet Status Khusus / Tidak dihitung sebagai piutang",r.excluded.length],
+        [],
+        ["Catatan","Status khusus seperti Cuti, Atlet Baru, Akan Join, Pemutihan, dan Kompensasi dipisahkan dari piutang."]
+    ];
+    const wsSummary=XLSX.utils.aoa_to_sheet(summary);
+    wsSummary["!cols"]=[{wch:55},{wch:24}];
+    ["B5","B7","B9"].forEach(a=>{if(wsSummary[a])wsSummary[a].z='"Rp" #,##0';});
+    XLSX.utils.book_append_sheet(wb,wsSummary,"Ringkasan");
+
+    const paidRows=[["No","NRA","Nama Atlet","Tanggal Bayar","Metode","Nominal Diterima"],
+        ...r.paid.map((x,i)=>[i+1,x.a.nra||"",x.a.name,x.d.paidDate||"",x.d.method||"",x.amount]),
+        ["","","","","TOTAL",r.paidTotal]];
+    const wsPaid=XLSX.utils.aoa_to_sheet(paidRows);
+    wsPaid["!cols"]=[{wch:7},{wch:18},{wch:30},{wch:16},{wch:16},{wch:22}];
+    XLSX.utils.book_append_sheet(wb,wsPaid,"Pembayaran Masuk");
+
+    const debtRows=[["No","NRA","Nama Atlet","Nominal Piutang"],
+        ...r.receivable.map((x,i)=>[i+1,x.a.nra||"",x.a.name,x.amount]),
+        ["","","TOTAL PIUTANG",r.receivableTotal]];
+    const wsDebt=XLSX.utils.aoa_to_sheet(debtRows);
+    wsDebt["!cols"]=[{wch:7},{wch:18},{wch:30},{wch:22}];
+    XLSX.utils.book_append_sheet(wb,wsDebt,"Piutang");
+
+    const excludedRows=[["No","NRA","Nama Atlet","Breakdown","Nominal Data"],
+        ...r.excluded.map((x,i)=>[i+1,x.a.nra||"",x.a.name,x.d.breakdown||x.d.paid||"Status khusus",x.amount])];
+    const wsExcluded=XLSX.utils.aoa_to_sheet(excludedRows);
+    wsExcluded["!cols"]=[{wch:7},{wch:18},{wch:30},{wch:24},{wch:22}];
+    XLSX.utils.book_append_sheet(wb,wsExcluded,"Status Khusus");
+
+    XLSX.writeFile(wb,`Laporan_Keuangan_Nagaraja_${currentMonth}.xlsx`);
+}
+
+function printFinanceReport(){
+    const financePage=document.getElementById("finance");
+    if(!financePage.classList.contains("active")){
+        alert("Buka menu Laporan Keuangan terlebih dahulu.");
+        return;
+    }
+    window.print();
 }
 
 function renderFollowup(){
